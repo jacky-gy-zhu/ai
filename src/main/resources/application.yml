@@ -9,6 +9,10 @@ milvus:
 spring:
   application:
     name: ai
+  config:
+    import:
+      - classpath:application-llm.yml
+      - classpath:application-mcp.yml
 
 # Logging Configuration
 logging:

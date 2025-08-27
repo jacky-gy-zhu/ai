@@ -1,0 +1,49 @@
+spring:
+  ai:
+    model:
+      chat: openai
+
+    openai:
+      # 全局 OpenAI API Key 和基础 URL
+      api-key: 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
+      base-url: https://api.openai.com
+      chat:
+        base-url: https://api.openai.com
+        completions-path: /v1/chat/completions
+        api-key: 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
+        options:
+          timeout: 120s
+          model: gpt-5-mini
+          temperature: 1
+
+      embedding:
+        embeddings-path: /v1/embeddings
+        api-key: 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
+        options:
+          model: text-embedding-3-small
+
+    #    openai:
+    #      api-key: AIzaSyArWsCdV5NsUB5RRW9ZV1q76iveG7HvBCA
+    #      base-url: https://generativelanguage.googleapis.com/v1beta
+    #
+    #      chat:
+    #        base-url: https://generativelanguage.googleapis.com/v1beta
+    #        completions-path: /openai/chat/completions
+    #        api-key: AIzaSyArWsCdV5NsUB5RRW9ZV1q76iveG7HvBCA
+    #        options:
+    #          model: models/gemini-2.5-pro
+    #          temperature: 0.7
+
+
+
+    #    openai:
+    #      api-key: sk-675d4310e77b4c65b512019eb89e05f9
+    #      base-url: https://api.deepseek.com
+    #
+    #      chat:
+    #        base-url: https://api.deepseek.com
+    #        completions-path: /chat/completions
+    #        api-key: sk-675d4310e77b4c65b512019eb89e05f9
+    #        options:
+    #          model: deepseek-chat
+    #          temperature: 0.7

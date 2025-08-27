@@ -1,0 +1,22 @@
+# MCP (Model Context Protocol) 服务器配置
+spring:
+  ai:
+    mcp:
+      client:
+        enabled: true
+        name: AI-Agent
+        version: 1.0.0
+        type: SYNC
+        stdio:
+          connections:
+            rdmMcpServer:
+              command: /usr/bin/java
+              args:
+                - -jar
+                - /Users/jacky.zhu/Documents/workspace/github/mcp-db-server/target/mcp-db-server-0.0.1.jar
+            rdmApiServer:
+              command: /usr/bin/java
+              args:
+                - -jar
+                - /Users/jacky.zhu/Documents/workspace/github/mcp-db-server/target/mcp-db-server-0.0.1.jar
+
