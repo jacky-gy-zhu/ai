@@ -1,0 +1,17 @@
+# Milvus Configuration
+milvus:
+  host: localhost
+  port: 19530
+  username: 
+  password: 
+
+# Spring Configuration
+spring:
+  application:
+    name: ai-rag-service
+
+# Logging Configuration
+logging:
+  level:
+    com.enable.ai: INFO
+    io.milvus: INFO
