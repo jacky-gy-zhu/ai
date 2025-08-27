@@ -8,7 +8,7 @@ milvus:
 # Spring Configuration
 spring:
   application:
-    name: ai-rag-service
+    name: ai
 
 # Logging Configuration
 logging:
