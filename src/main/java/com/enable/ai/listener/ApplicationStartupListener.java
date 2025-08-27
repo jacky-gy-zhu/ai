@@ -3,6 +3,7 @@ package com.enable.ai.listener;
 import com.enable.ai.rag.RagService;
 import com.enable.ai.rag.vo.RagChunk;
 import com.enable.ai.service.McpService;
+import com.enable.ai.util.Constants;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,7 @@ public class ApplicationStartupListener {
         logger.info("Application startup completed, starting RAG system initialization...");
 
         try {
-            String collectionName = "MCP_TOOLS";
+            String collectionName = Constants.MCP_COLLECTION_NAME;
             // Clear existing collection if it exists
             ragService.deleteCollection(collectionName);
             logger.info("Cleared existing RAG collection: {}", collectionName);

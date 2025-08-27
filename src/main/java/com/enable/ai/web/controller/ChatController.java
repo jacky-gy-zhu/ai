@@ -1,6 +1,7 @@
 package com.enable.ai.web.controller;
 
 import com.enable.ai.rag.RagService;
+import com.enable.ai.service.McpService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
@@ -17,11 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 public class ChatController {
@@ -29,14 +26,17 @@ public class ChatController {
     private final ChatClient chatClient;
     private final SyncMcpToolCallbackProvider toolCallbackProvider;
     private final RagService ragService;
+    private final McpService mcpService;
     private final ObjectMapper objectMapper;
 
     @Autowired
     public ChatController(Builder chatClientBuilder,
-                          SyncMcpToolCallbackProvider toolCallbackProvider, RagService ragService) {
+                          SyncMcpToolCallbackProvider toolCallbackProvider,
+                          RagService ragService, McpService mcpService) {
         this.chatClient = chatClientBuilder.build();
         this.toolCallbackProvider = toolCallbackProvider;
         this.ragService = ragService;
+        this.mcpService = mcpService;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -67,7 +67,7 @@ public class ChatController {
             Prompt promptObj = new Prompt(currentMessages);
             ChatClient.CallResponseSpec aiResponse = chatClient
                     .prompt(promptObj)
-                    .toolCallbacks(toolCallbackProvider.getToolCallbacks())
+                    .toolCallbacks(mcpService.findRelatedToolCallbacks(prompt, 5))
                     .call();
 
             String content = aiResponse.content();
@@ -151,11 +151,11 @@ public class ChatController {
     private String buildChatResponse(String content, String prompt, long userId) {
         try {
             Map<String, Object> response = new HashMap<>();
-            
+
             response.put("success", true);
             response.put("type", "chat");
             response.put("timestamp", new Date().toString());
-            
+
             // Try to parse AI's JSON response
             JsonNode aiResponse = null;
             try {
@@ -164,26 +164,26 @@ public class ChatController {
                 // If AI didn't return valid JSON, treat as plain text
                 System.err.println("AI response is not valid JSON, treating as plain text: " + e.getMessage());
             }
-            
+
             if (aiResponse != null) {
                 // AI returned structured JSON - use it directly
                 Map<String, Object> contentData = new HashMap<>();
                 contentData.put("contentType", aiResponse.has("contentType") ? aiResponse.get("contentType").asText() : "text");
                 contentData.put("title", aiResponse.has("title") ? aiResponse.get("title").asText() : null);
-                
+
                 // Extract content object
                 if (aiResponse.has("content")) {
                     contentData.put("content", objectMapper.convertValue(aiResponse.get("content"), Map.class));
                 } else {
                     contentData.put("content", Map.of("text", content));
                 }
-                
+
                 // Extract AI metadata
                 Map<String, Object> aiMetadata = new HashMap<>();
                 if (aiResponse.has("metadata")) {
                     aiMetadata = objectMapper.convertValue(aiResponse.get("metadata"), Map.class);
                 }
-                
+
                 response.put("content", contentData);
                 response.put("aiMetadata", aiMetadata);
             } else {
@@ -193,7 +193,7 @@ public class ChatController {
                 contentData.put("content", Map.of("text", content != null ? content : ""));
                 response.put("content", contentData);
             }
-            
+
             // Add system metadata
             Map<String, Object> systemMetadata = new HashMap<>();
             systemMetadata.put("userId", userId);
@@ -201,7 +201,7 @@ public class ChatController {
             systemMetadata.put("responseLength", content != null ? content.length() : 0);
             systemMetadata.put("isStructured", aiResponse != null);
             response.put("systemMetadata", systemMetadata);
-            
+
             return objectMapper.writeValueAsString(response);
         } catch (Exception e) {
             return buildErrorResponse("Response formatting error", "Failed to format chat response: " + e.getMessage());
@@ -219,7 +219,7 @@ public class ChatController {
             response.put("timestamp", new Date().toString());
             response.put("error", errorType);
             response.put("message", message);
-            
+
             return objectMapper.writeValueAsString(response);
         } catch (Exception e) {
             return "{\"success\":false,\"error\":\"JSON formatting error\",\"message\":\"Failed to format error response\"}";
