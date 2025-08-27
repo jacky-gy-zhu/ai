@@ -1,36 +1,161 @@
 package com.enable.ai.service;
 
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.ArrayList;
 
 /**
- * Service for generating text embeddings
- * This is a simple mock implementation. In production, you would integrate with
- * OpenAI, Sentence Transformers, or other embedding models.
+ * Service for generating text embeddings using OpenAI's embedding model
+ * Integrates with Spring AI OpenAI for production-ready embedding generation
  */
+@Slf4j
 @Service
 public class EmbeddingService {
 
-    private static final int EMBEDDING_DIMENSION = 768; // Common dimension for many models
+    private final EmbeddingModel embeddingModel;
+
+    // Dimension for text-embedding-3-small model
+    private static final int EMBEDDING_DIMENSION = 1536;
 
     /**
-     * Generate embedding vector for the given text
-     * This is a mock implementation - replace with actual embedding model
+     * Constructor injection of the OpenAI embedding model
+     * Spring AI will automatically configure this based on application-llm.yml
+     */
+    public EmbeddingService(EmbeddingModel embeddingModel) {
+        this.embeddingModel = embeddingModel;
+        log.info("EmbeddingService initialized with OpenAI embedding model");
+    }
+
+    /**
+     * Generate embedding vector for the given text using OpenAI's embedding model
+     *
+     * @param text The input text to generate embeddings for
+     * @return List of Float values representing the embedding vector
      */
     public List<Float> generateEmbedding(String text) {
-        // Mock implementation: generate random embeddings
-        // In production, replace this with actual embedding model calls
-        java.util.Random random = new java.util.Random(text.hashCode()); // Use text hashcode as seed for consistent results
-        return java.util.stream.IntStream.range(0, EMBEDDING_DIMENSION)
-                .mapToObj(i -> random.nextFloat() * 2 - 1) // Random float between -1 and 1
-                .toList();
+        try {
+            log.debug("Generating embedding for text: {}", text.substring(0, Math.min(text.length(), 100)));
+
+            // Call the OpenAI embedding model directly with text
+            float[] embedding = embeddingModel.embed(text);
+
+            // Convert float array to List<Float> for compatibility
+            List<Float> floatEmbedding = new ArrayList<>(embedding.length);
+            for (float value : embedding) {
+                floatEmbedding.add(value);
+            }
+
+            log.debug("Successfully generated embedding with dimension: {}", floatEmbedding.size());
+            return floatEmbedding;
+
+        } catch (Exception e) {
+            log.error("Error generating embedding for text: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to generate embedding", e);
+        }
+    }
+
+    /**
+     * Generate embeddings for multiple texts in batch
+     * More efficient for processing multiple texts
+     *
+     * @param texts List of texts to generate embeddings for
+     * @return List of embedding vectors
+     */
+    public List<List<Float>> generateBatchEmbeddings(List<String> texts) {
+        try {
+            log.debug("Generating embeddings for {} texts", texts.size());
+
+            // Call the OpenAI embedding model with list of texts
+            List<float[]> embeddingArrays = embeddingModel.embed(texts);
+
+            // Convert all embeddings from float[] to List<Float>
+            List<List<Float>> embeddings = new ArrayList<>();
+            for (float[] embedding : embeddingArrays) {
+                List<Float> floatEmbedding = new ArrayList<>(embedding.length);
+                for (float value : embedding) {
+                    floatEmbedding.add(value);
+                }
+                embeddings.add(floatEmbedding);
+            }
+
+            log.debug("Successfully generated {} embeddings", embeddings.size());
+            return embeddings;
+
+        } catch (Exception e) {
+            log.error("Error generating batch embeddings: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to generate batch embeddings", e);
+        }
+    }
+
+    /**
+     * Calculate cosine similarity between two embedding vectors
+     * Useful for measuring similarity between texts
+     *
+     * @param embedding1 First embedding vector
+     * @param embedding2 Second embedding vector
+     * @return Cosine similarity score between -1 and 1
+     */
+    public float calculateCosineSimilarity(List<Float> embedding1, List<Float> embedding2) {
+        if (embedding1.size() != embedding2.size()) {
+            throw new IllegalArgumentException("Embeddings must have the same dimension");
+        }
+
+        float dotProduct = 0.0f;
+        float norm1 = 0.0f;
+        float norm2 = 0.0f;
+
+        for (int i = 0; i < embedding1.size(); i++) {
+            dotProduct += embedding1.get(i) * embedding2.get(i);
+            norm1 += embedding1.get(i) * embedding1.get(i);
+            norm2 += embedding2.get(i) * embedding2.get(i);
+        }
+
+        norm1 = (float) Math.sqrt(norm1);
+        norm2 = (float) Math.sqrt(norm2);
+
+        if (norm1 == 0.0f || norm2 == 0.0f) {
+            return 0.0f;
+        }
+
+        return dotProduct / (norm1 * norm2);
     }
 
     /**
      * Get the dimension of embeddings generated by this service
+     * For text-embedding-3-small model, this is 1536
+     *
+     * @return The embedding dimension
      */
     public int getEmbeddingDimension() {
         return EMBEDDING_DIMENSION;
+    }
+
+    /**
+     * Normalize an embedding vector to unit length
+     * Useful for certain similarity calculations
+     *
+     * @param embedding The embedding vector to normalize
+     * @return Normalized embedding vector
+     */
+    public List<Float> normalizeEmbedding(List<Float> embedding) {
+        float norm = 0.0f;
+        for (Float value : embedding) {
+            norm += value * value;
+        }
+        norm = (float) Math.sqrt(norm);
+
+        if (norm == 0.0f) {
+            return embedding;
+        }
+
+        List<Float> normalized = new ArrayList<>(embedding.size());
+        for (Float value : embedding) {
+            normalized.add(value / norm);
+        }
+
+        return normalized;
     }
 }

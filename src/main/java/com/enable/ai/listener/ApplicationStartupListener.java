@@ -1,12 +1,17 @@
 package com.enable.ai.listener;
 
 import com.enable.ai.rag.RagService;
+import com.enable.ai.rag.vo.RagChunk;
+import com.enable.ai.service.McpService;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class ApplicationStartupListener {
@@ -16,15 +21,26 @@ public class ApplicationStartupListener {
     @Autowired
     private RagService ragService;
 
+    @Autowired
+    private McpService mcpService;
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
         logger.info("Application startup completed, starting RAG system initialization...");
 
         try {
-            // Use progressive initialization to ensure backward compatibility
-//            ragService.initializeDocumentsWithCompatibility();
-            logger.info("RAG system initialization completed");
+            String collectionName = "MCP_TOOLS";
+            // Clear existing collection if it exists
+            ragService.deleteCollection(collectionName);
+            logger.info("Cleared existing RAG collection: {}", collectionName);
+            // Load all tool schemas from MCP service
+            List<String> toolSchemas = mcpService.findAllToolSchemas();
+            if (CollectionUtils.isNotEmpty(toolSchemas)) {
+                toolSchemas.forEach(schema -> {
+                    ragService.addChunkToCollection(collectionName, new RagChunk(schema));
+                    logger.info("Added tool schema to RAG collection 'MCP_TOOLS': {}", schema);
+                });
+            }
 
         } catch (Exception e) {
             logger.error("RAG system initialization failed", e);
