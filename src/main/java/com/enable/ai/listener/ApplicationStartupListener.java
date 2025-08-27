@@ -1,6 +1,6 @@
 package com.enable.ai.listener;
 
-import com.enable.ai.rag.RagService;
+import com.enable.ai.service.RagService;
 import com.enable.ai.rag.vo.RagChunk;
 import com.enable.ai.service.McpService;
 import com.enable.ai.util.Constants;

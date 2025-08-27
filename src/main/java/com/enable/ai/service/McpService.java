@@ -1,6 +1,5 @@
 package com.enable.ai.service;
 
-import com.enable.ai.rag.RagService;
 import com.enable.ai.rag.vo.RagChunk;
 import com.enable.ai.util.Constants;
 import com.google.common.collect.Maps;

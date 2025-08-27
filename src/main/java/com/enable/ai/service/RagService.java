@@ -1,4 +1,4 @@
-package com.enable.ai.rag;
+package com.enable.ai.service;
 
 import com.enable.ai.rag.vo.RagChunk;
 

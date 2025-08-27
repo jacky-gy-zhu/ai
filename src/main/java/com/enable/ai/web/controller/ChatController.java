@@ -1,6 +1,6 @@
 package com.enable.ai.web.controller;
 
-import com.enable.ai.rag.RagService;
+import com.enable.ai.service.RagService;
 import com.enable.ai.service.McpService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

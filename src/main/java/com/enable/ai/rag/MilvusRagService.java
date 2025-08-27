@@ -2,6 +2,7 @@ package com.enable.ai.rag;
 
 import com.enable.ai.rag.vo.RagChunk;
 import com.enable.ai.service.EmbeddingService;
+import com.enable.ai.service.RagService;
 import com.enable.ai.util.TextChunker;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.grpc.DataType;

@@ -1,6 +1,6 @@
 package com.enable.ai.web.controller;
 
-import com.enable.ai.rag.RagService;
+import com.enable.ai.service.RagService;
 import com.enable.ai.rag.vo.RagChunk;
 import com.enable.ai.web.dto.request.AddChunkRequest;
 import com.enable.ai.web.dto.request.AddContextRequest;
