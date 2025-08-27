@@ -34,16 +34,16 @@ public class RagController {
      */
     @PostMapping("/collections/{collectionName}/chunks")
     public ResponseEntity<ApiResponse<Void>> addChunk(
-            @PathVariable @NotBlank String collectionName,
+            @PathVariable("collectionName") @NotBlank String collectionName,
             @RequestBody @Valid AddChunkRequest request) {
-        
+
         try {
-            log.info("Adding chunk to collection: {}, text length: {}", 
+            log.info("Adding chunk to collection: {}, text length: {}",
                     collectionName, request.getText().length());
-            
+
             RagChunk chunk = new RagChunk(request.getText());
             ragService.addChunkToCollection(collectionName, chunk);
-            
+
             return ResponseEntity.ok(ApiResponse.success("Chunk added successfully"));
         } catch (Exception e) {
             log.error("Error adding chunk to collection {}: {}", collectionName, e.getMessage(), e);
@@ -58,15 +58,15 @@ public class RagController {
      */
     @PostMapping("/collections/{collectionName}/context")
     public ResponseEntity<ApiResponse<Void>> addContext(
-            @PathVariable @NotBlank String collectionName,
+            @PathVariable("collectionName") @NotBlank String collectionName,
             @RequestBody @Valid AddContextRequest request) {
-        
+
         try {
-            log.info("Adding context to collection: {}, text length: {}", 
+            log.info("Adding context to collection: {}, text length: {}",
                     collectionName, request.getContext().length());
-            
+
             ragService.addContextToCollection(collectionName, request.getContext());
-            
+
             return ResponseEntity.ok(ApiResponse.success("Context added successfully"));
         } catch (Exception e) {
             log.error("Error adding context to collection {}: {}", collectionName, e.getMessage(), e);
@@ -81,16 +81,16 @@ public class RagController {
      */
     @PostMapping("/collections/{collectionName}/retrieve/chunks")
     public ResponseEntity<ApiResponse<RetrieveChunksResponse>> retrieveTopKChunks(
-            @PathVariable @NotBlank String collectionName,
+            @PathVariable("collectionName") @NotBlank String collectionName,
             @RequestBody @Valid RetrieveRequest request) {
-        
+
         try {
-            log.info("Retrieving top {} chunks from collection: {} for query: {}", 
+            log.info("Retrieving top {} chunks from collection: {} for query: {}",
                     request.getK(), collectionName, request.getQuery());
-            
+
             List<RagChunk> chunks = ragService.retrieveTopKChunks(
                     collectionName, request.getQuery(), request.getK());
-            
+
             RetrieveChunksResponse response = new RetrieveChunksResponse(chunks);
             return ResponseEntity.ok(ApiResponse.success(response));
         } catch (Exception e) {
@@ -106,16 +106,16 @@ public class RagController {
      */
     @PostMapping("/collections/{collectionName}/retrieve/context")
     public ResponseEntity<ApiResponse<String>> retrieveContext(
-            @PathVariable @NotBlank String collectionName,
+            @PathVariable("collectionName") @NotBlank String collectionName,
             @RequestBody @Valid RetrieveRequest request) {
-        
+
         try {
-            log.info("Retrieving context from collection: {} for query: {}", 
+            log.info("Retrieving context from collection: {} for query: {}",
                     collectionName, request.getQuery());
-            
+
             String context = ragService.retrieveContext(
                     collectionName, request.getQuery(), request.getK());
-            
+
             return ResponseEntity.ok(ApiResponse.success(context));
         } catch (Exception e) {
             log.error("Error retrieving context from collection {}: {}", collectionName, e.getMessage(), e);
@@ -130,13 +130,13 @@ public class RagController {
      */
     @DeleteMapping("/collections/{collectionName}")
     public ResponseEntity<ApiResponse<Void>> deleteCollection(
-            @PathVariable @NotBlank String collectionName) {
-        
+            @PathVariable("collectionName") @NotBlank String collectionName) {
+
         try {
             log.info("Deleting collection: {}", collectionName);
-            
+
             ragService.deleteCollection(collectionName);
-            
+
             return ResponseEntity.ok(ApiResponse.success("Collection deleted successfully"));
         } catch (Exception e) {
             log.error("Error deleting collection {}: {}", collectionName, e.getMessage(), e);
