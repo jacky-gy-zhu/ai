@@ -4,13 +4,13 @@ spring:
       chat: openai
 
     openai:
-      # 全局 OpenAI API Key 和基础 URL
-      api-key: sk-lccV7FUCJXdIRUdPFdOMOdy_7riJsWMKv-bOjfNVzmT3BlbkFJkGZQphwiQD1qMmQ9ggZ5bnXuvnzZWkOtXR9xj7HBAA
-      base-url: https://api.openai.com
+      # Global OpenAI API Key and base URL using environment variables
+      api-key: ${OPENAI_API_KEY}
+      base-url: ${OPENAI_BASE_URL}
       chat:
-        base-url: https://api.openai.com
+        base-url: ${OPENAI_BASE_URL}
         completions-path: /v1/chat/completions
-        api-key: sk-lccV7FUCJXdIRUdPFdOMOdy_7riJsWMKv-bOjfNVzmT3BlbkFJkGZQphwiQD1qMmQ9ggZ5bnXuvnzZWkOtXR9xj7HBAA
+        api-key: ${OPENAI_API_KEY}
         options:
           timeout: 120s
           model: gpt-5-mini
@@ -18,32 +18,34 @@ spring:
 
       embedding:
         embeddings-path: /v1/embeddings
-        api-key: sk-lccV7FUCJXdIRUdPFdOMOdy_7riJsWMKv-bOjfNVzmT3BlbkFJkGZQphwiQD1qMmQ9ggZ5bnXuvnzZWkOtXR9xj7HBAA
+        api-key: ${OPENAI_API_KEY}
         options:
           model: text-embedding-3-small
 
+    # Google Gemini Configuration (uncomment to use)
     #    openai:
-    #      api-key: AIzaSyArWsCdV5NsUB5RRW9ZV1q76iveG7HvBCA
-    #      base-url: https://generativelanguage.googleapis.com/v1beta
+    #      api-key: ${GOOGLE_API_KEY}
+    #      base-url: ${GOOGLE_BASE_URL}
     #
     #      chat:
-    #        base-url: https://generativelanguage.googleapis.com/v1beta
+    #        base-url: ${GOOGLE_BASE_URL}
     #        completions-path: /openai/chat/completions
-    #        api-key: AIzaSyArWsCdV5NsUB5RRW9ZV1q76iveG7HvBCA
+    #        api-key: ${GOOGLE_API_KEY}
     #        options:
     #          model: models/gemini-2.5-pro
     #          temperature: 0.7
 
 
 
+    # DeepSeek Configuration (uncomment to use)
     #    openai:
-    #      api-key: sk-675d4310e77b4c65b512019eb89e05f9
-    #      base-url: https://api.deepseek.com
+    #      api-key: ${DEEPSEEK_API_KEY}
+    #      base-url: ${DEEPSEEK_BASE_URL}
     #
     #      chat:
-    #        base-url: https://api.deepseek.com
+    #        base-url: ${DEEPSEEK_BASE_URL}
     #        completions-path: /chat/completions
-    #        api-key: sk-675d4310e77b4c65b512019eb89e05f9
+    #        api-key: ${DEEPSEEK_API_KEY}
     #        options:
     #          model: deepseek-chat
     #          temperature: 0.7
