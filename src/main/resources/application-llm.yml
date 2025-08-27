@@ -5,12 +5,12 @@ spring:
 
     openai:
       # 全局 OpenAI API Key 和基础 URL
-      api-key: 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
+      api-key: sk-lccV7FUCJXdIRUdPFdOMOdy_7riJsWMKv-bOjfNVzmT3BlbkFJkGZQphwiQD1qMmQ9ggZ5bnXuvnzZWkOtXR9xj7HBAA
       base-url: https://api.openai.com
       chat:
         base-url: https://api.openai.com
         completions-path: /v1/chat/completions
-        api-key: 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
+        api-key: sk-lccV7FUCJXdIRUdPFdOMOdy_7riJsWMKv-bOjfNVzmT3BlbkFJkGZQphwiQD1qMmQ9ggZ5bnXuvnzZWkOtXR9xj7HBAA
         options:
           timeout: 120s
           model: gpt-5-mini
@@ -18,7 +18,7 @@ spring:
 
       embedding:
         embeddings-path: /v1/embeddings
-        api-key: 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
+        api-key: sk-lccV7FUCJXdIRUdPFdOMOdy_7riJsWMKv-bOjfNVzmT3BlbkFJkGZQphwiQD1qMmQ9ggZ5bnXuvnzZWkOtXR9xj7HBAA
         options:
           model: text-embedding-3-small
 

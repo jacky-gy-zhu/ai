@@ -14,8 +14,53 @@ spring:
       - classpath:application-llm.yml
       - classpath:application-mcp.yml
 
-# Logging Configuration
+# 日志配置
 logging:
+  # 指定日志文件路径和名称
+  file:
+    name: /Users/jackyzhu/Downloads/application.log
+    # 或者分别指定路径和名称
+    # path: /Users/jackyzhu/Projects/Work/Enable/ai/logs
+    # name: application.log
+
+  # 日志文件滚动策略
+  logback:
+    rollingpolicy:
+      # 单个日志文件最大大小
+      max-file-size: 10MB
+      # 日志文件保留天数
+      max-history: 30
+      # 所有日志文件总大小上限
+      total-size-cap: 1GB
+      # 归档文件名模式
+      file-name-pattern: ${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz
+      # 启动时是否清理旧日志
+      clean-history-on-start: false
+
+  # 日志级别配置
   level:
-    com.enable.ai: INFO
-    io.milvus: INFO
+    # 根日志级别
+    root: INFO
+    # Spring Framework
+    org.springframework: INFO
+    org.springframework.web: INFO
+    org.springframework.boot: INFO
+    # Spring AI 和 MCP 相关
+    org.springframework.ai: DEBUG
+    org.springframework.ai.mcp: DEBUG
+    io.modelcontextprotocol: DEBUG
+    # Hibernate/JPA (如果使用)
+    org.hibernate: WARN
+    # 你的应用包
+    com.enable.ai: DEBUG
+
+  # 日志模式（可选）
+  pattern:
+    # 控制台输出格式
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) %magenta([%thread]) %cyan(%logger{36}) : %msg%n"
+    # 文件输出格式
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} : %msg%n"
+    # 日期格式
+    dateformat: yyyy-MM-dd HH:mm:ss.SSS
+    # 日志级别格式
+    level: "%5p"

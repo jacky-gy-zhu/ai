@@ -1,4 +1,3 @@
-# MCP (Model Context Protocol) 服务器配置
 spring:
   ai:
     mcp:
@@ -7,16 +6,69 @@ spring:
         name: AI-Agent
         version: 1.0.0
         type: SYNC
+        timeout: 60s  # Increase timeout for server initialization
         stdio:
           connections:
-            rdmMcpServer:
-              command: /usr/bin/java
+            # 1) Filesystem Server - AVAILABLE (Version 2025.8.21)
+            # Provides filesystem access to specified directories
+            mcpFilesystem:
+              command: npx
               args:
-                - -jar
-                - /Users/jacky.zhu/Documents/workspace/github/mcp-db-server/target/mcp-db-server-0.0.1.jar
-            rdmApiServer:
-              command: /usr/bin/java
-              args:
-                - -jar
-                - /Users/jacky.zhu/Documents/workspace/github/mcp-db-server/target/mcp-db-server-0.0.1.jar
+                - '-y'  # Auto-confirm installation
+                - '@modelcontextprotocol/server-filesystem'
+                - '/tmp'  # Allowed directory - change to your needs
+                # You can add more directories as additional args
 
+            # 2) Memory Server - AVAILABLE (Version 2025.8.4)
+            # Enables memory/knowledge graph for Claude
+            mcpMemory:
+              command: npx
+              args:
+                - '-y'
+                - '@modelcontextprotocol/server-memory'
+
+            # 3) Sequential Thinking Server - AVAILABLE (Version 2025.7.1)
+            # For sequential thinking and problem solving
+            mcpSequentialThinking:
+              command: npx
+              args:
+                - '-y'
+                - '@modelcontextprotocol/server-sequential-thinking'
+
+            # Alternative: Use the forked Puppeteer server if needed
+            # mcpPuppeteer:
+            #   command: npx
+            #   args:
+            #     - '-y'
+            #     - '@hisma/server-puppeteer'  # Fork of the original
+
+# Add logging for debugging
+logging:
+  level:
+    org.springframework.ai.mcp: DEBUG
+    io.modelcontextprotocol: DEBUG
+    org.springframework.beans.factory: INFO
+
+#
+## MCP (Model Context Protocol) 服务器配置
+#spring:
+#  ai:
+#    mcp:
+#      client:
+#        enabled: true
+#        name: AI-Agent
+#        version: 1.0.0
+#        type: SYNC
+#        stdio:
+#          connections:
+#            rdmMcpServer:
+#              command: /usr/bin/java
+#              args:
+#                - -jar
+#                - /Users/jacky.zhu/Documents/workspace/github/mcp-db-server/target/mcp-db-server-0.0.1.jar
+#            rdmApiServer:
+#              command: /usr/bin/java
+#              args:
+#                - -jar
+#                - /Users/jacky.zhu/Documents/workspace/github/mcp-db-server/target/mcp-db-server-0.0.1.jar
+#
