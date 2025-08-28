@@ -93,9 +93,9 @@ public class ChatService {
         Prompt promptObj = new Prompt(currentMessages);
         ToolCallback[] toolCallbacks = mcpService.findRelatedToolCallbacks(userPrompt, 5);
 
-        log.info("\n>>> Tool callbacks being registered: {}", toolCallbacks.length);
+        log.info("\n>>> {} tools registered.", toolCallbacks.length);
         for (ToolCallback callback : toolCallbacks) {
-            log.debug("\n>>> Tool: {}", callback.getToolDefinition());
+            log.info("\n>>> Tool: {}", callback.getToolDefinition());
         }
 
         ChatClient.CallResponseSpec aiResponse = chatClient

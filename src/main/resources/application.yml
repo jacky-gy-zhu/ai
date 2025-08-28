@@ -46,13 +46,13 @@ logging:
     org.springframework.web: INFO
     org.springframework.boot: INFO
     # Spring AI 和 MCP 相关
-    org.springframework.ai: DEBUG
-    org.springframework.ai.mcp: DEBUG
-    io.modelcontextprotocol: DEBUG
+    org.springframework.ai: INFO
+    org.springframework.ai.mcp: INFO
+    io.modelcontextprotocol: INFO
     # Hibernate/JPA (如果使用)
-    org.hibernate: WARN
+    org.hibernate: INFO
     # 你的应用包
-    com.enable.ai: DEBUG
+    com.enable.ai: INFO
 
   # 日志模式（可选）
   pattern:
