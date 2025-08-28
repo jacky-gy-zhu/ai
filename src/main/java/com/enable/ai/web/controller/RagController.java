@@ -1,19 +1,20 @@
 package com.enable.ai.web.controller;
 
-import com.enable.ai.service.RagService;
 import com.enable.ai.rag.vo.RagChunk;
+import com.enable.ai.service.PromptRagService;
+import com.enable.ai.service.RagService;
 import com.enable.ai.web.dto.request.AddChunkRequest;
 import com.enable.ai.web.dto.request.AddContextRequest;
 import com.enable.ai.web.dto.request.RetrieveRequest;
 import com.enable.ai.web.dto.response.ApiResponse;
 import com.enable.ai.web.dto.response.RetrieveChunksResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
 /**
@@ -27,6 +28,7 @@ import java.util.List;
 public class RagController {
 
     private final RagService ragService;
+    private final PromptRagService promptRagService;
 
     /**
      * 添加单个文本块到指定集合
@@ -152,5 +154,20 @@ public class RagController {
     @GetMapping("/health")
     public ResponseEntity<ApiResponse<String>> healthCheck() {
         return ResponseEntity.ok(ApiResponse.success("RAG service is running"));
+    }
+
+    @GetMapping("/collections/{collectionName}/{userId}/retrieve/prompt")
+    public ResponseEntity<ApiResponse<String>> retrievePrompt(
+            @PathVariable("collectionName") String collectionName,
+            @PathVariable("userId") Long userId) {
+
+        try {
+            List<String> prompts = promptRagService.findAllUserPrompts(collectionName, userId);
+
+            return ResponseEntity.ok(ApiResponse.success(String.join("\n", prompts)));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to retrieve prompt: " + e.getMessage()));
+        }
     }
 }

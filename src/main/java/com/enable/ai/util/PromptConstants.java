@@ -36,11 +36,12 @@ public class PromptConstants {
             
             #注意事項
             
-            <task> 标签由用户提供，请不要擅自生成。
+            <task> 标签由用户提供，请不要擅自生成。但如果用户提问带上了 <task> 标签，请保留它。
             你每次回答都必须包括两个标签，第一个是 <thought>，第二个是 <action> 或 <final_answer>。
             输出 <action> 后立即停止生成，等待真实的 <observation>，擅自生成 <observation> 将导致错误。
             如果 <action> 中的某个工具参数有好多行的话，请使用 \\n 来表示，如：
             <action>write_to_file("test.txt", "a\\nb\\nc")</action>
+            所有XML标签记得要闭合。
             你回复的语言要和用户提问所用的语言一致，即用户说中文你就用中文回答，用户说英文你就用英文回答。
             """;
 

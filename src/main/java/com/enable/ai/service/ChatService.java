@@ -30,7 +30,7 @@ public class ChatService {
     private PromptRagService promptRagService;
 
     public String chatWithReactMode(long userId, String userPrompt) {
-        return chatWithReactModeInternal(userId, userPrompt, 1);
+        return chatWithReactModeInternal(userId, "<task>" + userPrompt + "</task>", 1);
     }
 
     private String chatWithReactModeInternal(long userId, String userPrompt, int depth) {
@@ -39,7 +39,7 @@ public class ChatService {
         }
         log.info("\n### [CHAT BEGIN {}] #############################################################################", depth);
         String answer = chat(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, userPrompt);
-        log.info("\n### [CHAT END] {} #############################################################################", depth);
+        log.info("\n### [CHAT END {}] #############################################################################", depth);
         if (isFinalAnswerPresent(answer)) {
             String finalAnswer = convertToFinalAnswer(answer);
             promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Q: " + userPrompt + "\nA: " + finalAnswer);
@@ -50,12 +50,14 @@ public class ChatService {
     }
 
     private boolean isFinalAnswerPresent(String answer) {
-        return answer.contains("<final_answer>") && answer.contains("</final_answer>");
+        return answer.contains("<final_answer>");
     }
 
     private String convertToFinalAnswer(String answer) {
         if (answer.contains("<final_answer>") && answer.contains("</final_answer>")) {
             return answer.substring(answer.indexOf("<final_answer>") + 14, answer.indexOf("</final_answer>")).trim();
+        } else if (answer.contains("<final_answer>")) {
+            return answer.substring(answer.indexOf("<final_answer>") + 14);
         } else {
             return answer;
         }
