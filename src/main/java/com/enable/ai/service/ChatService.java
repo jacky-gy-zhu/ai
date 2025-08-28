@@ -38,7 +38,7 @@ public class ChatService {
             return "Error: Exceeded maximum reasoning depth.";
         }
         log.info("\n### [CHAT BEGIN {}] #############################################################################", depth);
-        String answer = chat(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, promptXmlTag != null ? ("<" + promptXmlTag + ">" + userPrompt + "</" + promptXmlTag + ">") : userPrompt);
+        String answer = chatWithUserHistory(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, addXmlTagToUserPrompt(userPrompt, promptXmlTag));
         log.info("\n### [CHAT END {}] #############################################################################", depth);
         if (isFinalAnswerPresent(answer)) {
             String finalAnswer = convertToFinalAnswer(answer);
@@ -47,6 +47,10 @@ public class ChatService {
         } else {
             return chatWithReactModeInternal(userId, answer, depth + 1, null);
         }
+    }
+
+    private static String addXmlTagToUserPrompt(String userPrompt, String promptXmlTag) {
+        return promptXmlTag != null ? ("<" + promptXmlTag + ">" + userPrompt + "</" + promptXmlTag + ">") : userPrompt;
     }
 
     private boolean isFinalAnswerPresent(String answer) {
@@ -64,23 +68,33 @@ public class ChatService {
     }
 
     public String chatWithPlanMode(long userId, String userPrompt) {
-        String answer = chat(userId, PromptConstants.SYSTEM_PROMPT_PLAN_MODE, userPrompt);
+        String answer = chatWithUserHistory(userId, PromptConstants.SYSTEM_PROMPT_PLAN_MODE, userPrompt);
         promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Q: " + userPrompt + "\nA: " + answer);
         return answer;
     }
 
-    private String chat(long userId, String systemPrompt, String userPrompt) {
+    private String chatWithNoHistory(String systemPrompt, String userPrompt) {
+        return chat(null, systemPrompt, userPrompt);
+    }
+
+    private String chatWithUserHistory(long userId, String systemPrompt, String userPrompt) {
+        return chat(userId, systemPrompt, userPrompt);
+    }
+
+    private String chat(Long userId, String systemPrompt, String userPrompt) {
         List<Message> currentMessages = Lists.newArrayList();
 
         currentMessages.add(SystemMessage.builder().text(systemPrompt).build());
 
         StringBuilder userPromptBuilder = new StringBuilder();
 
-        List<String> userPromptHistories = promptRagService.findRelatedUserPrompts(Constants.USER_PROMPTS_COLLECTION_NAME, userId, userPrompt, 20);
-        if (CollectionUtils.isNotEmpty(userPromptHistories)) {
-            userPromptBuilder.append("\n").append("Here are some of your previous related conversations:");
-            for (int i = userPromptHistories.size() - 1; i >= 0; i--) {
-                userPromptBuilder.append("\n").append(userPromptHistories.get(i));
+        if (userId != null) {
+            List<String> userPromptHistories = promptRagService.findRelatedUserPrompts(Constants.USER_PROMPTS_COLLECTION_NAME, userId, userPrompt, 20);
+            if (CollectionUtils.isNotEmpty(userPromptHistories)) {
+                userPromptBuilder.append("\n").append("Here are some of your previous related conversations:");
+                for (int i = userPromptHistories.size() - 1; i >= 0; i--) {
+                    userPromptBuilder.append("\n").append(userPromptHistories.get(i));
+                }
             }
         }
         userPromptBuilder.append("\n").append("Now, please help to complete the following task or conversation:");
