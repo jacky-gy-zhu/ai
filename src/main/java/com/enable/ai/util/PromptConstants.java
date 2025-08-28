@@ -46,6 +46,9 @@ public class PromptConstants {
             """;
 
     public static final String SYSTEM_PROMPT_PLAN_MODE = """
-            
+            """;
+
+    public static final String PROMPT_COMPRESS_HISTORY = """
+            Compress the following user prompt histories while retaining the key information:
             """;
 }

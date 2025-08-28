@@ -29,6 +29,9 @@ public class ChatService {
     @Autowired
     private PromptRagService promptRagService;
 
+    @Autowired
+    private PromptHistoryService promptHistoryService;
+
     public String chatWithReactMode(long userId, String userPrompt) {
         return chatWithReactModeInternal(userId, userPrompt, 1, "task");
     }
@@ -90,6 +93,7 @@ public class ChatService {
 
         if (userId != null) {
             List<String> userPromptHistories = promptRagService.findRelatedUserPrompts(Constants.USER_PROMPTS_COLLECTION_NAME, userId, userPrompt, 20);
+            userPromptHistories = promptHistoryService.compressUserPromptHistories(userPromptHistories);
             if (CollectionUtils.isNotEmpty(userPromptHistories)) {
                 userPromptBuilder.append("\n").append("Here are some of your previous related conversations:");
                 for (int i = userPromptHistories.size() - 1; i >= 0; i--) {
