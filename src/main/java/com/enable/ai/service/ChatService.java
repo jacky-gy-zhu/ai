@@ -1,6 +1,7 @@
 package com.enable.ai.service;
 
 import com.enable.ai.util.Constants;
+import com.enable.ai.util.PromptConstants;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.springframework.ai.chat.client.ChatClient;
@@ -25,7 +26,19 @@ public class ChatService {
     @Autowired
     private PromptRagService promptRagService;
 
-    public String chat(long userId, String systemPrompt, String userPrompt) {
+    public String chatWithReactMode(long userId, String userPrompt) {
+        String answer = chat(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, userPrompt);
+        promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Q: " + userPrompt + "\nA: " + answer);
+        return answer;
+    }
+
+    public String chatWithPlanMode(long userId, String userPrompt) {
+        String answer = chat(userId, PromptConstants.SYSTEM_PROMPT_PLAN_MODE, userPrompt);
+        promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Q: " + userPrompt + "\nA: " + answer);
+        return answer;
+    }
+
+    private String chat(long userId, String systemPrompt, String userPrompt) {
 
         List<Message> currentMessages = Lists.newArrayList();
 
