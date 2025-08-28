@@ -30,10 +30,27 @@ public class ChatService {
     private PromptRagService promptRagService;
 
     public String chatWithReactMode(long userId, String userPrompt) {
+        return chatWithReactModeInternal(userId, userPrompt, 1);
+    }
+
+    private String chatWithReactModeInternal(long userId, String userPrompt, int depth) {
+        if (depth > 20) {
+            return "Error: Exceeded maximum reasoning depth.";
+        }
+        log.info("\n### [CHAT BEGIN {}] #############################################################################", depth);
         String answer = chat(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, userPrompt);
-        String finalAnswer = convertToFinalAnswer(answer);
-        promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Q: " + userPrompt + "\nA: " + finalAnswer);
-        return finalAnswer;
+        log.info("\n### [CHAT END] {} #############################################################################", depth);
+        if (isFinalAnswerPresent(answer)) {
+            String finalAnswer = convertToFinalAnswer(answer);
+            promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Q: " + userPrompt + "\nA: " + finalAnswer);
+            return finalAnswer;
+        } else {
+            return chatWithReactModeInternal(userId, answer, depth + 1);
+        }
+    }
+
+    private boolean isFinalAnswerPresent(String answer) {
+        return answer.contains("<final_answer>") && answer.contains("</final_answer>");
     }
 
     private String convertToFinalAnswer(String answer) {
@@ -51,9 +68,6 @@ public class ChatService {
     }
 
     private String chat(long userId, String systemPrompt, String userPrompt) {
-
-        log.info("\n### [CHAT BEGIN] #############################################################################");
-
         List<Message> currentMessages = Lists.newArrayList();
 
         currentMessages.add(SystemMessage.builder().text(systemPrompt).build());
@@ -90,7 +104,6 @@ public class ChatService {
         String response = aiResponse.content();
 
         log.info("\n>>> AI response: \n{}", response);
-        log.info("\n### [CHAT END] #############################################################################");
 
         return response;
     }
