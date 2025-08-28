@@ -157,14 +157,14 @@ public class RagController {
     }
 
     @GetMapping("/collections/{collectionName}/{userId}/retrieve/prompt")
-    public ResponseEntity<ApiResponse<String>> retrievePrompt(
+    public ResponseEntity<ApiResponse<List<String>>> retrievePrompt(
             @PathVariable("collectionName") String collectionName,
             @PathVariable("userId") Long userId) {
 
         try {
             List<String> prompts = promptRagService.findAllUserPrompts(collectionName, userId);
 
-            return ResponseEntity.ok(ApiResponse.success(String.join("\n", prompts)));
+            return ResponseEntity.ok(ApiResponse.success(prompts));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Failed to retrieve prompt: " + e.getMessage()));
