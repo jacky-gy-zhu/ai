@@ -31,8 +31,17 @@ public class ChatService {
 
     public String chatWithReactMode(long userId, String userPrompt) {
         String answer = chat(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, userPrompt);
-        promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Q: " + userPrompt + "\nA: " + answer);
-        return answer;
+        String finalAnswer = convertToFinalAnswer(answer);
+        promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Q: " + userPrompt + "\nA: " + finalAnswer);
+        return finalAnswer;
+    }
+
+    private String convertToFinalAnswer(String answer) {
+        if (answer.contains("<final_answer>") && answer.contains("</final_answer>")) {
+            return answer.substring(answer.indexOf("<final_answer>") + 14, answer.indexOf("</final_answer>")).trim();
+        } else {
+            return answer;
+        }
     }
 
     public String chatWithPlanMode(long userId, String userPrompt) {
@@ -42,6 +51,8 @@ public class ChatService {
     }
 
     private String chat(long userId, String systemPrompt, String userPrompt) {
+
+        log.info("\n### [CHAT BEGIN] #############################################################################");
 
         List<Message> currentMessages = Lists.newArrayList();
 
@@ -58,8 +69,17 @@ public class ChatService {
         userPromptBuilder.append("\n").append(userPrompt);
         currentMessages.add(UserMessage.builder().text(userPromptBuilder.toString()).build());
 
+        log.info("\n>>> System prompt: \n{}", systemPrompt);
+        log.info("\n>>> User prompt: \n{}", userPromptBuilder);
+
         Prompt promptObj = new Prompt(currentMessages);
         ToolCallback[] toolCallbacks = mcpService.findRelatedToolCallbacks(userPrompt, 5);
+
+        log.info("\n>>> Tool callbacks being registered: {}", toolCallbacks.length);
+        for (ToolCallback callback : toolCallbacks) {
+            log.debug("\n>>> Tool: {}", callback.getToolDefinition());
+        }
+
         ChatClient.CallResponseSpec aiResponse = chatClient
                 .prompt(promptObj)
                 .toolCallbacks(toolCallbacks)
@@ -67,16 +87,8 @@ public class ChatService {
 
         String response = aiResponse.content();
 
-        // Logging for debugging
-        log.info("################################################################################");
-        log.info(">>> Tool callbacks being registered: {}", toolCallbacks.length);
-        for (ToolCallback callback : toolCallbacks) {
-            log.debug(">>> Tool: {}", callback.getToolDefinition());
-        }
-        log.info(">>> System prompt: {}", systemPrompt);
-        log.info(">>> User prompt: {}", userPromptBuilder);
-        log.info(">>> AI response: {}", response);
-        log.info("################################################################################");
+        log.info("\n>>> AI response: \n{}", response);
+        log.info("\n### [CHAT END] #############################################################################");
 
         return response;
     }

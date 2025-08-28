@@ -41,6 +41,7 @@ public class PromptConstants {
             输出 <action> 后立即停止生成，等待真实的 <observation>，擅自生成 <observation> 将导致错误。
             如果 <action> 中的某个工具参数有好多行的话，请使用 \\n 来表示，如：
             <action>write_to_file("test.txt", "a\\nb\\nc")</action>
+            你回复的语言要和用户提问所用的语言一致，即用户说中文你就用中文回答，用户说英文你就用英文回答。
             """;
 
     public static final String SYSTEM_PROMPT_PLAN_MODE = """
