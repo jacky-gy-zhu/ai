@@ -1,5 +1,7 @@
 package com.enable.ai.rag;
 
+import com.enable.ai.rag.vo.PromptWithScore;
+import com.enable.ai.rag.vo.SortType;
 import com.enable.ai.service.EmbeddingService;
 import com.enable.ai.service.PromptRagService;
 import io.milvus.client.MilvusServiceClient;
@@ -85,6 +87,14 @@ public class MilvusPromptRagService implements PromptRagService {
 
     @Override
     public List<String> findRelatedUserPrompts(String collectionName, long userId, String query, int k) {
+        return findRelatedUserPrompts(collectionName, userId, query, k, SortType.SIMILARITY);
+    }
+
+    /**
+     * 查找相关的用户prompts，支持选择排序方式
+     */
+    public List<String> findRelatedUserPrompts(String collectionName, long userId,
+                                               String query, int k, SortType sortType) {
         try {
             // Check if collection exists
             if (!collectionExists(collectionName)) {
@@ -118,25 +128,42 @@ public class MilvusPromptRagService implements PromptRagService {
             handleResponse(response, "Search related prompts for user " + userId);
 
             SearchResultsWrapper wrapper = new SearchResultsWrapper(response.getData().getResults());
-            List<String> relatedPrompts = new ArrayList<>();
+            List<PromptWithScore> promptsWithScore = new ArrayList<>();
 
-            // Extract prompt texts from search results
+            // Extract prompt texts, timestamps and scores from search results
             if (wrapper.getRowRecords() != null && !wrapper.getRowRecords().isEmpty()) {
                 List<SearchResultsWrapper.IDScore> scores = wrapper.getIDScore(0);
                 List<QueryResultsWrapper.RowRecord> records = wrapper.getRowRecords();
 
-                for (int i = 0; i < Math.min(scores.size(), k); i++) {
-                    if (i < records.size()) {
-                        String promptText = (String) records.get(i).get(PROMPT_TEXT_FIELD);
-                        if (promptText != null) {
-                            relatedPrompts.add(promptText);
-                        }
+                for (int i = 0; i < Math.min(records.size(), k); i++) {
+                    QueryResultsWrapper.RowRecord record = records.get(i);
+                    String promptText = (String) record.get(PROMPT_TEXT_FIELD);
+                    Long timestamp = (Long) record.get(TIMESTAMP_FIELD);
+
+                    if (promptText != null && timestamp != null) {
+                        float score = i < scores.size() ? scores.get(i).getScore() : 0f;
+                        promptsWithScore.add(new PromptWithScore(promptText, timestamp, score));
                     }
                 }
             }
 
-            log.info("Found {} related prompts for user {} in collection: {}",
-                    relatedPrompts.size(), userId, collectionName);
+            // 根据选择的排序方式排序
+            List<String> relatedPrompts;
+            if (sortType == SortType.TIMESTAMP) {
+                // 按时间戳排序（升序，最早的在前）
+                relatedPrompts = promptsWithScore.stream()
+                        .sorted(Comparator.comparing(PromptWithScore::getTimestamp))
+                        .map(PromptWithScore::getPromptText)
+                        .collect(Collectors.toList());
+            } else {
+                // 按相似度排序（已经是按相似度排序的，直接提取）
+                relatedPrompts = promptsWithScore.stream()
+                        .map(PromptWithScore::getPromptText)
+                        .collect(Collectors.toList());
+            }
+
+            log.info("Found {} related prompts for user {} in collection: {} (sorted by {})",
+                    relatedPrompts.size(), userId, collectionName, sortType);
             return relatedPrompts;
         } catch (Exception e) {
             log.error("Error finding related prompts for user {} in collection {}: {}",
@@ -165,7 +192,7 @@ public class MilvusPromptRagService implements PromptRagService {
                     .withCollectionName(collectionName)
                     .withExpr(expr)
                     .withOutFields(Arrays.asList(PROMPT_TEXT_FIELD, TIMESTAMP_FIELD))
-                    .withLimit(10000L)  // Set a reasonable limit
+                    .withLimit(16000L)  // Set limit within Milvus constraint (max 16384)
                     .build();
 
             R<QueryResults> response = milvusClient.query(queryParam);
@@ -217,23 +244,8 @@ public class MilvusPromptRagService implements PromptRagService {
             // Load collection if not loaded
             loadCollection(collectionName);
 
-            // Build expression for filtering by user_id
-            String expr = String.format("user_id == %d", userId);
-
-            // Delete all prompts for the user
-            DeleteParam deleteParam = DeleteParam.newBuilder()
-                    .withCollectionName(collectionName)
-                    .withExpr(expr)
-                    .build();
-
-            R<MutationResult> response = milvusClient.delete(deleteParam);
-            handleResponse(response, "Delete prompts for user " + userId);
-
-            // Flush to ensure deletion is persisted
-            FlushParam flushParam = FlushParam.newBuilder()
-                    .addCollectionName(collectionName)
-                    .build();
-            milvusClient.flush(flushParam);
+            // Use batch deletion to avoid hitting Milvus query limits
+            deleteUserPromptsBatch(collectionName, userId);
 
             log.info("Successfully deleted all prompts for user {} from collection: {}",
                     userId, collectionName);
@@ -242,6 +254,83 @@ public class MilvusPromptRagService implements PromptRagService {
                     userId, collectionName, e.getMessage(), e);
             throw new RuntimeException("Failed to delete user prompts from collection", e);
         }
+    }
+
+    /**
+     * Delete user prompts in batches to avoid hitting Milvus query limits
+     */
+    private void deleteUserPromptsBatch(String collectionName, long userId) {
+        int batchSize = 1000; // Small batch size to avoid limits
+        int totalDeleted = 0;
+        
+        while (true) {
+            try {
+                // Query a batch of IDs to delete (using small limit)
+                String expr = String.format("user_id == %d", userId);
+                QueryParam queryParam = QueryParam.newBuilder()
+                        .withCollectionName(collectionName)
+                        .withExpr(expr)
+                        .withOutFields(List.of(ID_FIELD))
+                        .withLimit((long) batchSize)
+                        .build();
+
+                R<QueryResults> queryResponse = milvusClient.query(queryParam);
+                if (queryResponse.getStatus() != R.Status.Success.getCode()) {
+                    log.warn("Query failed during batch deletion: {}", queryResponse.getMessage());
+                    break;
+                }
+
+                QueryResultsWrapper wrapper = new QueryResultsWrapper(queryResponse.getData());
+                if (wrapper.getRowRecords() == null || wrapper.getRowRecords().isEmpty()) {
+                    // No more records to delete
+                    break;
+                }
+
+                // Extract IDs and delete them
+                List<Long> idsToDelete = new ArrayList<>();
+                for (QueryResultsWrapper.RowRecord record : wrapper.getRowRecords()) {
+                    Long id = (Long) record.get(ID_FIELD);
+                    if (id != null) {
+                        idsToDelete.add(id);
+                    }
+                }
+
+                if (idsToDelete.isEmpty()) {
+                    break;
+                }
+
+                // Delete by IDs
+                String deleteExpr = String.format("id in %s", idsToDelete.toString().replace('[', '[').replace(']', ']'));
+                DeleteParam deleteParam = DeleteParam.newBuilder()
+                        .withCollectionName(collectionName)
+                        .withExpr(deleteExpr)
+                        .build();
+
+                R<MutationResult> deleteResponse = milvusClient.delete(deleteParam);
+                handleResponse(deleteResponse, "Batch delete prompts for user " + userId);
+
+                totalDeleted += idsToDelete.size();
+                log.debug("Deleted batch of {} records for user {}, total deleted: {}", 
+                         idsToDelete.size(), userId, totalDeleted);
+
+                // If we got fewer records than batch size, we're done
+                if (idsToDelete.size() < batchSize) {
+                    break;
+                }
+
+            } catch (Exception e) {
+                log.error("Error in batch deletion for user {}: {}", userId, e.getMessage(), e);
+                break;
+            }
+        }
+
+        // Flush to ensure deletion is persisted
+        FlushParam flushParam = FlushParam.newBuilder()
+                .addCollectionName(collectionName)
+                .build();
+        milvusClient.flush(flushParam);
+
+        log.info("Batch deletion completed for user {}, total deleted: {}", userId, totalDeleted);
     }
 
     /**

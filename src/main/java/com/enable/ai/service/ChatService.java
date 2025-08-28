@@ -1,5 +1,6 @@
 package com.enable.ai.service;
 
+import com.enable.ai.rag.vo.SortType;
 import com.enable.ai.util.Constants;
 import com.enable.ai.util.PromptConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -92,12 +93,12 @@ public class ChatService {
         StringBuilder userPromptBuilder = new StringBuilder();
 
         if (userId != null) {
-            List<String> userPromptHistories = promptRagService.findRelatedUserPrompts(Constants.USER_PROMPTS_COLLECTION_NAME, userId, userPrompt, 20);
+            List<String> userPromptHistories = promptRagService.findRelatedUserPrompts(Constants.USER_PROMPTS_COLLECTION_NAME, userId, userPrompt, 20, SortType.TIMESTAMP);
             userPromptHistories = promptHistoryService.compressUserPromptHistories(userPromptHistories, userId);
             if (CollectionUtils.isNotEmpty(userPromptHistories)) {
                 userPromptBuilder.append("\n").append("Here are some of your previous related conversations:");
-                for (int i = userPromptHistories.size() - 1; i >= 0; i--) {
-                    userPromptBuilder.append("\n").append(userPromptHistories.get(i));
+                for (String historyPrompt : userPromptHistories) {
+                    userPromptBuilder.append("\n").append(historyPrompt);
                 }
             }
         }
