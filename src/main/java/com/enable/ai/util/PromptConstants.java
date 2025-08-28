@@ -49,6 +49,6 @@ public class PromptConstants {
             """;
 
     public static final String PROMPT_COMPRESS_HISTORY = """
-            Compress the following user prompt histories while retaining the key information:
+            压缩以下用户提示历史记录，同时保留关键信息，确保压缩后的内容不超过 15000 个英文字符：:
             """;
 }
