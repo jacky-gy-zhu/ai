@@ -53,7 +53,7 @@ public class McpService {
 
     public List<String> findRelatedToolNames(String query, int k) {
         return ragService.retrieveTopKChunks(
-                        Constants.MCP_COLLECTION_NAME, query, k).stream()
+                        Constants.MCP_TOOLS_COLLECTION_NAME, query, k).stream()
                 .map(RagChunk::getNameFromText).toList();
     }
 }

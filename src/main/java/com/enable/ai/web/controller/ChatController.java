@@ -5,6 +5,7 @@ import com.enable.ai.service.McpService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
+import org.apache.commons.compress.utils.Lists;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.ChatClient.Builder;
 import org.springframework.ai.chat.messages.Message;
@@ -54,7 +55,7 @@ public class ChatController {
 //            String ragHistoryContext = ragService.getRelevantHistoryContext(prompt, userId);
 
             // 3. Build current conversation message list (excluding full history)
-            List<Message> currentMessages = new ArrayList<>();
+            List<Message> currentMessages = Lists.newArrayList();
 
             // 4. Build system message with RAG context and relevant history
             String systemMessage = buildSystemMessageWithRagAndHistory(ragDocumentContext, "");

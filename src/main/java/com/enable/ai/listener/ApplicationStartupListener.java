@@ -30,7 +30,7 @@ public class ApplicationStartupListener {
         logger.info("Application startup completed, starting RAG system initialization...");
 
         try {
-            String collectionName = Constants.MCP_COLLECTION_NAME;
+            String collectionName = Constants.MCP_TOOLS_COLLECTION_NAME;
             // Clear existing collection if it exists
             ragService.deleteCollection(collectionName);
             logger.info("Cleared existing RAG collection: {}", collectionName);
