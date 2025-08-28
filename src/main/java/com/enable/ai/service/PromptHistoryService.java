@@ -2,6 +2,7 @@ package com.enable.ai.service;
 
 import com.enable.ai.util.Constants;
 import com.enable.ai.util.PromptConstants;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.springframework.ai.chat.client.ChatClient;
@@ -9,29 +10,34 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
+@Slf4j
 @Service
 public class PromptHistoryService {
 
     @Autowired
     private ChatClient chatClient;
 
-    public List<String> compressUserPromptHistories(List<String> userPromptHistories) {
+    @Autowired
+    private PromptRagService promptRagService;
+
+    public List<String> compressUserPromptHistories(List<String> userPromptHistories, long userId) {
         if (CollectionUtils.isEmpty(userPromptHistories)) {
             return userPromptHistories;
         }
 
-        if (userPromptHistories.size() > Constants.MAX_USER_PROMPT_HISTORIES_SESSION_SIZE) {
-            return compressUserPromptHistoriesToString(userPromptHistories);
+        if (userPromptHistories.size() >= Constants.MAX_USER_PROMPT_HISTORIES_SESSION_SIZE) {
+            return compressUserPromptHistoriesToString(userPromptHistories, userId);
         }
         long totalSize = userPromptHistories.stream().mapToLong(String::length).sum();
         if (totalSize > Constants.MAX_USER_PROMPT_HISTORIES_TOKEN_SIZE) {
-            return compressUserPromptHistoriesToString(userPromptHistories);
+            return compressUserPromptHistoriesToString(userPromptHistories, userId);
         }
         return userPromptHistories;
     }
 
-    private List<String> compressUserPromptHistoriesToString(List<String> userPromptHistories) {
+    private List<String> compressUserPromptHistoriesToString(List<String> userPromptHistories, long userId) {
         List<String> compressedList = Lists.newArrayList();
         StringBuilder sb = new StringBuilder();
         for (String history : userPromptHistories) {
@@ -45,7 +51,15 @@ public class PromptHistoryService {
                 .prompt(compressionPrompt)
                 .call();
 
-        compressedList.add(aiResponse.content());
+        String aiContent = aiResponse.content();
+        compressedList.add(aiContent);
+
+        log.info(">>> Compressed user prompt histories from {} to {} characters.",
+                combinedHistories.length(), Objects.requireNonNull(aiContent).length());
+
+        // Save the compressed history to vector DB and delete old histories
+        promptRagService.deleteUserPromptsCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId);
+        promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, aiContent);
 
         return compressedList;
     }
