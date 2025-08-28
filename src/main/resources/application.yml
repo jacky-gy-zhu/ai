@@ -45,10 +45,17 @@ logging:
     org.springframework: INFO
     org.springframework.web: INFO
     org.springframework.boot: INFO
-    # Spring AI 和 MCP 相关
+    # Spring AI 和 MCP 相关 - 全部设为 INFO
     org.springframework.ai: INFO
     org.springframework.ai.mcp: INFO
     io.modelcontextprotocol: INFO
+    # 明确设置 MCP 的子包级别
+    io.modelcontextprotocol.spec: INFO
+    io.modelcontextprotocol.client: INFO
+    # 简写方式，设置整个 io 包
+    io: INFO
+    # Milvus 相关
+    io.milvus: INFO
     # Hibernate/JPA (如果使用)
     org.hibernate: INFO
     # 你的应用包

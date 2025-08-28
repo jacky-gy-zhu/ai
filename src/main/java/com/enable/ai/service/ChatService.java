@@ -42,7 +42,7 @@ public class ChatService {
         log.info("\n### [CHAT END {}] #############################################################################", depth);
         if (isFinalAnswerPresent(answer)) {
             String finalAnswer = convertToFinalAnswer(answer);
-            promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Q: " + userPrompt + "\nA: " + finalAnswer);
+            promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Question: " + userPrompt + "\nAnswer: " + finalAnswer);
             return finalAnswer;
         } else {
             return chatWithReactModeInternal(userId, answer, depth + 1, null);
@@ -93,7 +93,7 @@ public class ChatService {
         Prompt promptObj = new Prompt(currentMessages);
         ToolCallback[] toolCallbacks = mcpService.findRelatedToolCallbacks(userPrompt, 5);
 
-        log.info("\n>>> {} tools registered.", toolCallbacks.length);
+        log.info("\n>>> [{} tools] registered.", toolCallbacks.length);
         for (ToolCallback callback : toolCallbacks) {
             log.info("\n>>> Tool: {}", callback.getToolDefinition());
         }
@@ -105,7 +105,7 @@ public class ChatService {
 
         String response = aiResponse.content();
 
-        log.info("\n>>> AI response: \n{}", response);
+        log.info("\n>>> [AI response]: \n{}", response);
 
         return response;
     }
