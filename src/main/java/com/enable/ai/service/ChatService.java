@@ -62,10 +62,12 @@ public class ChatService {
 
         List<String> userPromptHistories = promptRagService.findRelatedUserPrompts(Constants.USER_PROMPTS_COLLECTION_NAME, userId, userPrompt, 20);
         if (CollectionUtils.isNotEmpty(userPromptHistories)) {
+            userPromptBuilder.append("\n").append("Here are some of your previous related conversations:");
             for (String history : userPromptHistories) {
                 userPromptBuilder.append("\n").append(history);
             }
         }
+        userPromptBuilder.append("\n").append("Now, please help to complete the following task or conversation:");
         userPromptBuilder.append("\n").append(userPrompt);
         currentMessages.add(UserMessage.builder().text(userPromptBuilder.toString()).build());
 
