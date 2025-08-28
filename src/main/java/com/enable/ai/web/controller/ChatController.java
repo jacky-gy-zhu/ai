@@ -44,6 +44,7 @@ public class ChatController {
      * Build structured chat response in JSON format
      */
     private String buildChatResponse(String content) {
+        // TODO - make this as json and with timestamp, token usage, etc.
         return content;
     }
 
