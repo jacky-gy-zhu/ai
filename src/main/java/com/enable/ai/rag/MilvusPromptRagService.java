@@ -4,6 +4,7 @@ import com.enable.ai.rag.vo.PromptWithScore;
 import com.enable.ai.rag.vo.SortType;
 import com.enable.ai.service.EmbeddingService;
 import com.enable.ai.service.PromptRagService;
+import com.enable.ai.util.Constants;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.grpc.DataType;
 import io.milvus.grpc.MutationResult;
@@ -192,7 +193,7 @@ public class MilvusPromptRagService implements PromptRagService {
                     .withCollectionName(collectionName)
                     .withExpr(expr)
                     .withOutFields(Arrays.asList(PROMPT_TEXT_FIELD, TIMESTAMP_FIELD))
-                    .withLimit(16000L)  // Set limit within Milvus constraint (max 16384)
+                    .withLimit(Constants.LIMIT_CHUNK_TOKEN_SIZE)  // Set limit within Milvus constraint (max 16384)
                     .build();
 
             R<QueryResults> response = milvusClient.query(queryParam);
