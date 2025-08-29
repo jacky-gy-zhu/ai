@@ -73,7 +73,8 @@ public class ChatController {
         // 异步处理聊天请求
         new Thread(() -> {
             try {
-                String finalAnswer = planAndExecuteAgent.streamChat(userId, prompt, emitter);
+                String finalAnswer = reActAgent.streamChat(userId, prompt, emitter);
+                sseService.sendFinalAnswerEvent(emitter, finalAnswer);
                 promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Question: " + prompt + "\nAnswer: " + finalAnswer);
             } catch (Exception e) {
                 log.error("Error in async chat processing", e);
@@ -83,8 +84,8 @@ public class ChatController {
                     log.error("Error completing emitter with error", completeError);
                 }
             } finally {
-                emitter.complete();
                 sseService.getSentReasoningSteps().remove();
+                emitter.complete();
             }
         }).start();
 

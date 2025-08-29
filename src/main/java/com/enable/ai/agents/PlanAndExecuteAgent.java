@@ -41,7 +41,6 @@ public class PlanAndExecuteAgent implements AiAgent {
 
     @Override
     public String streamChat(long userId, String userPrompt, SseEmitter emitter) {
-        int stepCount = 1;
         try {
             LeadAgentResponse response = null;
             do {

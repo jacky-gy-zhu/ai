@@ -119,7 +119,20 @@ public class SseService {
     public void sendFinalAnswerEvent(SseEmitter emitter, LeadAgentResponse response) {
         try {
             if (response.hasFinalAnswer()) {
-                sendEvent(emitter, "done", Map.of("final_content", response.getFinalAnswer()));
+                sendEvent(emitter, "reasoning_step", Map.of(
+                        "type", "final_answer",
+                        "content", response.getFinalAnswer()
+                ));
+            }
+        } catch (Exception e) {
+            log.error("Error sending SSE event: {}", e.getMessage(), e);
+        }
+    }
+
+    public void sendFinalAnswerEvent(SseEmitter emitter, String finalAnswer) {
+        try {
+            if (finalAnswer != null && !finalAnswer.trim().isEmpty()) {
+                sendEvent(emitter, "done", Map.of("final_content", finalAnswer));
             }
         } catch (Exception e) {
             log.error("Error sending SSE event: {}", e.getMessage(), e);

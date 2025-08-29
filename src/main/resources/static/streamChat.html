@@ -614,6 +614,79 @@
                 padding: 16px 20px;
             }
         }
+
+        /* 修改消息元数据容器样式 */
+        .message-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+            gap: 8px;
+        }
+
+        .message.user .message-meta {
+            justify-content: flex-end;
+        }
+
+        .message.assistant .message-meta {
+            justify-content: flex-start;
+        }
+
+        /* 响应时间显示样式 */
+        .response-time {
+            font-size: 11px;
+            color: #a0aec0;
+            background-color: #f7fafc;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            font-weight: 500;
+            min-width: 40px;
+            text-align: center;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        /* 最终时间样式（停止动画） */
+        .response-time.final {
+            animation: none;
+            background-color: #e6fffa;
+            border-color: #38b2ac;
+            color: #234e52;
+        }
+
+        /* 脉冲动画效果 */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        /* 确保原有的 message-time 样式兼容 */
+        .message-time {
+            font-size: 12px;
+            color: #a0aec0;
+        }
+
+        /* 在思考侧边栏也可以添加总耗时显示 */
+        .thinking-header-timer {
+            font-size: 12px;
+            color: #718096;
+            background-color: #edf2f7;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        /* 连接状态栏也可以显示耗时 */
+        .connection-status.connected .timer-info {
+            font-weight: 600;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -695,6 +768,9 @@
             this.toolsPanelCollapsed = false;
             this.toolsCompactMode = true;
 
+            this.responseStartTime = null;
+            this.responseTimer = null;
+
             this.init();
         }
 
@@ -749,6 +825,10 @@
         startStreaming(prompt, userId) {
             this.isStreaming = true;
             this.setLoadingState(true);
+
+            // 记录开始时间
+            this.responseStartTime = Date.now();
+            this.startResponseTimer();
 
             // 重置状态
             this.resetThinkingState();
@@ -829,6 +909,30 @@
                     this.handleStreamEnd();
                 }
             });
+        }
+
+        // 添加新方法 - 启动响应计时器
+        startResponseTimer() {
+            // 清除旧的计时器
+            if (this.responseTimer) {
+                clearInterval(this.responseTimer);
+            }
+
+            // 每100ms更新一次显示
+            this.responseTimer = setInterval(() => {
+                if (this.responseStartTime && this.currentAssistantMessage) {
+                    const elapsed = ((Date.now() - this.responseStartTime) / 1000).toFixed(1);
+                    this.updateResponseTime(elapsed);
+                }
+            }, 100);
+        }
+
+        // 添加新方法 - 更新响应时间显示
+        updateResponseTime(seconds) {
+            const timeElement = this.currentAssistantMessage.querySelector('.response-time');
+            if (timeElement) {
+                timeElement.textContent = `${seconds}s`;
+            }
         }
 
         resetThinkingState() {
@@ -936,6 +1040,21 @@
             this.isStreaming = false;
             this.setLoadingState(false);
 
+            // 停止计时器并显示最终时间
+            if (this.responseTimer) {
+                clearInterval(this.responseTimer);
+                this.responseTimer = null;
+            }
+
+            if (this.responseStartTime && this.currentAssistantMessage) {
+                const totalTime = ((Date.now() - this.responseStartTime) / 1000).toFixed(1);
+                const timeElement = this.currentAssistantMessage.querySelector('.response-time');
+                if (timeElement) {
+                    timeElement.textContent = `${totalTime}s`;
+                    timeElement.classList.add('final');
+                }
+            }
+
             if (this.currentEventSource) {
                 this.currentEventSource.close();
                 this.currentEventSource = null;
@@ -989,6 +1108,12 @@
                 hour: '2-digit',
                 minute: '2-digit'
             });
+
+            // 为 assistant 消息添加响应时间显示
+            let responseTimeHtml = '';
+            if (type === 'assistant' && this.isStreaming) {
+                responseTimeHtml = '<span class="response-time">0.0s</span>';
+            }
 
             messageElement.innerHTML = `
                 <div class="message-content">${this.formatMessage(content)}</div>
