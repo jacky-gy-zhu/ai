@@ -60,7 +60,7 @@ public class PlanAndExecuteAgent implements AiAgent {
                 }
             } while (!response.hasFinalAnswer());
 
-            sseService.sendFinalAnswerEvent(emitter, response);
+            sseService.sendFinalAnswerEvent(emitter, response.getFinalAnswer());
 
             return response.getFinalAnswer();
         } catch (Exception e) {
