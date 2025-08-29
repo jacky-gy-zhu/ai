@@ -73,6 +73,7 @@ public class ChatController {
         // 异步处理聊天请求
         new Thread(() -> {
             try {
+//                 String finalAnswer = planAndExecuteAgent.streamChat(userId, prompt, emitter);
                 String finalAnswer = reActAgent.streamChat(userId, prompt, emitter);
                 sseService.sendFinalAnswerEvent(emitter, finalAnswer);
                 promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Question: " + prompt + "\nAnswer: " + finalAnswer);

@@ -35,9 +35,13 @@ public class SseService {
         event.put("timestamp", System.currentTimeMillis());
 
         String jsonData = objectMapper.writeValueAsString(event);
-        emitter.send(SseEmitter.event()
-                .name(eventType)
-                .data(jsonData));
+        try {
+            emitter.send(SseEmitter.event()
+                    .name(eventType)
+                    .data(jsonData));
+        } catch (Exception e) {
+            log.error("Error sending SSE event: {}", e.getMessage(), e);
+        }
     }
 
     public void sendEvent(SseEmitter emitter, ReActAgentResponse response) {
