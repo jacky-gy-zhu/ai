@@ -6,4 +6,8 @@ public abstract class AbstractChatService {
         return answer.contains("<final_answer>");
     }
 
+    protected String addXmlTagToUserPrompt(String userPrompt, String promptXmlTag) {
+        return promptXmlTag != null ? ("<" + promptXmlTag + ">" + userPrompt + "</" + promptXmlTag + ">") : userPrompt;
+    }
+
 }

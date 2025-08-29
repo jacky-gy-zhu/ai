@@ -186,10 +186,6 @@ public class StreamChatService extends AbstractChatService {
                 .data(jsonData));
     }
 
-    private static String addXmlTagToUserPrompt(String userPrompt, String promptXmlTag) {
-        return promptXmlTag != null ? ("<" + promptXmlTag + ">" + userPrompt + "</" + promptXmlTag + ">") : userPrompt;
-    }
-
     private String convertToFinalAnswer(String answer) {
         if (answer.contains("<final_answer>") && answer.contains("</final_answer>")) {
             return answer.substring(answer.indexOf("<final_answer>") + 14, answer.indexOf("</final_answer>")).trim();
