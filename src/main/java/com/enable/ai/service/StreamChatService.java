@@ -174,7 +174,10 @@ public class StreamChatService extends AbstractChatService {
 
     private void sendEvent(SseEmitter emitter, String eventType, Map<String, Object> data) throws IOException {
         Map<String, Object> event = new HashMap<>(data);
-        event.put("type", eventType);
+        if (!event.containsKey("type")) {
+            event.put("type", eventType);
+        }
+        event.put("event_type", eventType);
         event.put("timestamp", System.currentTimeMillis());
 
         String jsonData = objectMapper.writeValueAsString(event);

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.prod.website-files.com/61eedc0893a3ae85c3fe7761/621f2e3018738b4e3ad86671_favicon-c-32.png" rel="shortcut icon" type="image/x-icon">
     <title>AI Stream Chat</title>
     <style>
         * {
@@ -338,42 +339,138 @@
             white-space: pre-wrap;
         }
 
+        /* 改进的可折叠工具面板样式 */
         .available-tools {
             margin-bottom: 16px;
-            padding: 12px 16px;
             background-color: #f7fafc;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .tools-header {
+            padding: 12px 16px;
+            background-color: #edf2f7;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tools-header:hover {
+            background-color: #e2e8f0;
         }
 
         .tools-title {
             font-size: 13px;
             font-weight: 600;
             color: #4a5568;
-            margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
+        .expand-icon {
+            font-size: 12px;
+            color: #718096;
+            transition: transform 0.3s ease;
+        }
+
+        .available-tools.collapsed .expand-icon {
+            transform: rotate(-90deg);
+        }
+
+        .tools-content {
+            max-height: 400px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            padding: 12px 16px;
+        }
+
+        .available-tools.collapsed .tools-content {
+            max-height: 0;
+            padding: 0 16px;
+            overflow: hidden;
+        }
+
         .tool-item {
-            margin-bottom: 6px;
-            padding: 6px 10px;
+            margin-bottom: 8px;
+            padding: 8px 12px;
             background-color: white;
-            border-radius: 4px;
+            border-radius: 6px;
             border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .tool-item:hover {
+            border-color: #cbd5e0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .tool-item:last-child {
+            margin-bottom: 0;
         }
 
         .tool-name {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             color: #2c7a7b;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tool-expand-indicator {
+            font-size: 10px;
+            color: #a0aec0;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .tool-item:hover .tool-expand-indicator {
+            opacity: 1;
+        }
+
+        .tool-item.expanded .tool-expand-indicator {
+            transform: rotate(180deg);
+            opacity: 1;
         }
 
         .tool-description {
-            font-size: 11px;
+            font-size: 12px;
             color: #718096;
+            line-height: 1.4;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, margin-top 0.3s ease;
+        }
+
+        .tool-item.expanded .tool-description {
+            max-height: 200px;
+            margin-top: 4px;
+        }
+
+        .tool-item.expanded {
+            background-color: #f7fafc;
+            border-color: #667eea;
+        }
+
+        .tool-item.expanded .tool-name {
+            color: #667eea;
+        }
+
+        /* 紧凑模式 - 默认只显示工具名称 */
+        .tools-compact-mode .tool-item {
+            padding: 6px 12px;
+            margin-bottom: 4px;
+        }
+
+        .tools-compact-mode .tool-name {
+            margin-bottom: 0;
         }
 
         .loading-dots {
@@ -451,6 +548,32 @@
             border: 1px solid #f5c6cb;
         }
 
+        /* 工具面板视图切换按钮 */
+        .tools-view-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #718096;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tools-view-toggle:hover {
+            background-color: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .tools-view-toggle.active {
+            background-color: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
         @media (max-width: 1024px) {
             .thinking-sidebar {
                 width: 300px;
@@ -463,18 +586,18 @@
                 border-left: none;
                 border-right: none;
             }
-            
+
             .thinking-sidebar {
                 width: 100%;
                 height: 200px;
                 border-left: none;
                 border-top: 1px solid #e2e8f0;
             }
-            
+
             .chat-messages {
                 padding: 16px 20px;
             }
-            
+
             .chat-input-area {
                 padding: 16px 20px;
             }
@@ -555,6 +678,10 @@
             // 改进的步骤跟踪 - 使用Map来存储每个步骤的详细信息
             this.displayedSteps = new Map();
             this.stepCounter = 0;
+
+            // 工具面板状态
+            this.toolsPanelCollapsed = false;
+            this.toolsCompactMode = true;
 
             this.init();
         }
@@ -707,10 +834,14 @@
         }
 
         handleReasoningStepEvent(data) {
-            const { type, content, step_number } = data;
+            // 确保正确解析type字段
+            let stepType = data.type || 'unknown';
+            const content = data.content || '';
+            const stepNumber = data.step_number || 0;
 
-            console.log(`Reasoning step received: ${type} #${step_number}`);
-            console.log(`Content preview: ${(content || '').substring(0, 80)}...`);
+            console.log(`Reasoning step received - Type: "${stepType}", Step #${stepNumber}`);
+            console.log(`Data received:`, data);
+            console.log(`Content preview: ${content.substring(0, 80)}...`);
 
             if (!content || content.trim() === '') {
                 console.log('Skipping empty reasoning step');
@@ -718,15 +849,15 @@
             }
 
             // 使用更可靠的步骤标识符
-            const stepId = `${type}_${step_number}_${Date.now()}`;
+            const stepId = `${stepType}_${stepNumber}_${Date.now()}`;
 
             // 检查是否已经显示过相同内容的步骤
             const contentHash = this.hashContent(content);
             let isDuplicate = false;
 
             for (const [existingId, existingData] of this.displayedSteps.entries()) {
-                if (existingData.type === type && existingData.contentHash === contentHash) {
-                    console.log(`Duplicate step detected: ${type} with same content`);
+                if (existingData.type === stepType && existingData.contentHash === contentHash) {
+                    console.log(`Duplicate step detected: ${stepType} with same content`);
                     isDuplicate = true;
                     break;
                 }
@@ -734,17 +865,17 @@
 
             if (!isDuplicate) {
                 this.displayedSteps.set(stepId, {
-                    type,
+                    type: stepType,
                     content,
-                    step_number,
+                    step_number: stepNumber,
                     contentHash,
                     timestamp: Date.now()
                 });
 
-                this.addReasoningStep(type, content, step_number);
+                this.addReasoningStep(stepType, content, stepNumber);
 
                 // 如果是final_answer，更新聊天区域的消息内容
-                if (type === 'final_answer') {
+                if (stepType === 'final_answer') {
                     this.finalAnswerContent = content;
                     if (this.currentAssistantMessage) {
                         this.updateMessageContent(this.currentAssistantMessage, content);
@@ -892,29 +1023,79 @@
 
             const toolsElement = document.createElement('div');
             toolsElement.className = 'available-tools';
+            if (this.toolsPanelCollapsed) {
+                toolsElement.classList.add('collapsed');
+            }
 
+            // 创建可折叠的工具面板
             let toolsHtml = `
-                <div class="tools-title">
-                    🔧 可用工具
+                <div class="tools-header">
+                    <div class="tools-title">
+                        🔧 可用工具 (${Object.keys(tools).length})
+                    </div>
+                    <span class="expand-icon">▼</span>
                 </div>
+                <div class="tools-content ${this.toolsCompactMode ? 'tools-compact-mode' : ''}">
             `;
 
             Object.entries(tools).forEach(([name, description]) => {
+                const toolId = `tool-${name.replace(/[^a-zA-Z0-9]/g, '-')}`;
                 toolsHtml += `
-                    <div class="tool-item">
-                        <div class="tool-name">${this.formatMessage(name)}</div>
+                    <div class="tool-item" data-tool-id="${toolId}">
+                        <div class="tool-name">
+                            ${this.formatMessage(name)}
+                            <span class="tool-expand-indicator">▼</span>
+                        </div>
                         <div class="tool-description">${this.formatMessage(description)}</div>
                     </div>
                 `;
             });
 
+            toolsHtml += '</div>';
             toolsElement.innerHTML = toolsHtml;
+
+            // 绑定工具面板交互事件
+            const toolsHeader = toolsElement.querySelector('.tools-header');
+            toolsHeader.addEventListener('click', () => {
+                toolsElement.classList.toggle('collapsed');
+                this.toolsPanelCollapsed = !this.toolsPanelCollapsed;
+            });
+
+            // 绑定每个工具项的点击事件
+            const toolItems = toolsElement.querySelectorAll('.tool-item');
+            toolItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+
+                    // 切换展开/折叠状态
+                    const wasExpanded = item.classList.contains('expanded');
+
+                    // 先折叠所有其他工具项
+                    toolItems.forEach(otherItem => {
+                        if (otherItem !== item) {
+                            otherItem.classList.remove('expanded');
+                        }
+                    });
+
+                    // 切换当前工具项
+                    if (!wasExpanded) {
+                        item.classList.add('expanded');
+                    } else {
+                        item.classList.remove('expanded');
+                    }
+                });
+            });
+
             this.thinkingContent.appendChild(toolsElement);
             this.scrollThinkingToBottom();
         }
 
         addReasoningStep(type, content, stepNumber) {
-            console.log(`Adding reasoning step to UI: ${type} #${stepNumber}`);
+            // 确保type参数有效，如果无效则使用默认值
+            const validStepType = type || 'unknown';
+
+            console.log(`Adding reasoning step to UI - Type: "${validStepType}", Step #${stepNumber}`);
+            console.log(`Content length: ${content ? content.length : 0}`);
 
             // 移除空状态
             const emptyState = this.thinkingContent.querySelector('.empty-state');
@@ -923,28 +1104,34 @@
             }
 
             const stepElement = document.createElement('div');
-            stepElement.className = `reasoning-step ${type}`;
+            stepElement.className = `reasoning-step ${validStepType}`;
 
             const typeIcons = {
                 task: '📋',
                 thought: '💭',
                 action: '⚡',
                 observation: '👀',
-                final_answer: '✅'
+                final_answer: '✅',
+                unknown: '❓'
             };
 
             const typeNames = {
-                task: '任务',
-                thought: '思考',
-                action: '行动',
-                observation: '观察',
-                final_answer: '最终答案'
+                task: 'TASK',
+                thought: 'THOUGHT',
+                action: 'ACTION',
+                observation: 'OBSERVATION',
+                final_answer: 'FINAL_ANSWER',
+                unknown: 'UNKNOWN_STEP'
             };
 
+            // 使用英文大写的步骤类型名称
+            const displayName = typeNames[validStepType] || validStepType.toUpperCase();
+            const icon = typeIcons[validStepType] || '🔄';
+
             stepElement.innerHTML = `
-                <div class="step-type ${type}">
-                    <span class="step-type-icon">${typeIcons[type] || '📄'}</span>
-                    ${typeNames[type] || type.toUpperCase()}
+                <div class="step-type ${validStepType}">
+                    <span class="step-type-icon">${icon}</span>
+                    ${displayName}
                 </div>
                 <div class="reasoning-content">${this.formatMessage(content)}</div>
             `;
@@ -952,7 +1139,7 @@
             this.thinkingContent.appendChild(stepElement);
             this.scrollThinkingToBottom();
 
-            console.log(`Successfully added reasoning step: ${type} #${stepNumber}`);
+            console.log(`Successfully added reasoning step: ${displayName}`);
         }
 
         showConnectionStatus(message, status) {
