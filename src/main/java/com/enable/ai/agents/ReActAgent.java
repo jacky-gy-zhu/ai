@@ -67,7 +67,6 @@ public class ReActAgent implements AiAgent {
             log.error("Error in stream chat", e);
             try {
                 sseService.sendEvent(emitter, "error", Map.of("message", "处理聊天时出错: " + e.getMessage()));
-                emitter.completeWithError(e);
             } catch (IOException ioException) {
                 log.error("Error sending error event", ioException);
             }
