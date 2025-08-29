@@ -40,24 +40,17 @@ logging:
   # 日志级别配置
   level:
     # 根日志级别
-    root: DEBUG
+    root: INFO
     # Spring Framework
-    org.springframework: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.boot: DEBUG
-    # Spring AI 和 MCP 相关 - 全部设为 INFO
+    org.springframework: INFO
+    org.springframework.web: INFO
+    org.springframework.boot: INFO
+    # Spring AI 和 MCP 相关
     org.springframework.ai: DEBUG
     org.springframework.ai.mcp: DEBUG
     io.modelcontextprotocol: DEBUG
-    # 明确设置 MCP 的子包级别
-    io.modelcontextprotocol.spec: DEBUG
-    io.modelcontextprotocol.client: DEBUG
-    # 简写方式，设置整个 io 包
-    io: DEBUG
-    # Milvus 相关
-    io.milvus: DEBUG
     # Hibernate/JPA (如果使用)
-    org.hibernate: DEBUG
+    org.hibernate: WARN
     # 你的应用包
     com.enable.ai: DEBUG
 
