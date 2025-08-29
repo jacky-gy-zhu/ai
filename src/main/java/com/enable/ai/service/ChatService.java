@@ -20,7 +20,7 @@ import java.util.*;
 
 @Slf4j
 @Service
-public class ChatService extends AbstractChatService {
+public class ChatService {
 
     @Autowired
     private ChatClient chatClient;
@@ -36,9 +36,6 @@ public class ChatService extends AbstractChatService {
 
     @Autowired
     private SseService sseService;
-
-    // 用于跟踪每次聊天中已发送的推理步骤
-    private final ThreadLocal<Set<String>> sentReasoningSteps = ThreadLocal.withInitial(HashSet::new);
 
     public String chat(Long userId, String systemPrompt, String userPrompt) {
         List<Message> currentMessages = Lists.newArrayList();

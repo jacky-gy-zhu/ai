@@ -5,6 +5,7 @@ import com.enable.ai.service.PromptRagService;
 import com.enable.ai.service.SseService;
 import com.enable.ai.util.Constants;
 import com.enable.ai.util.PromptConstants;
+import com.enable.ai.util.XmlTagExtractor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,10 +16,10 @@ import java.util.Map;
 
 @Slf4j
 @Component
-public class ReActAgent {
+public class ReActAgent implements AiAgent {
 
     @Autowired
-    public ChatService chatService;
+    private ChatService chatService;
 
     @Autowired
     private PromptRagService promptRagService;
@@ -26,6 +27,7 @@ public class ReActAgent {
     @Autowired
     private SseService sseService;
 
+    @Override
     public String chat(long userId, String userPrompt) {
         String finalAnswer = chatInternal(userId, userPrompt, 1, "task");
         promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Question: " + userPrompt + "\nAnswer: " + finalAnswer);
@@ -37,7 +39,7 @@ public class ReActAgent {
             return "Error: Exceeded maximum reasoning depth.";
         }
         log.info("\n### [CHAT BEGIN {}] #############################################################################", depth);
-        String answer = chatService.chat(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, addXmlTagToUserPrompt(userPrompt, promptXmlTag));
+        String answer = chatService.chat(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, XmlTagExtractor.addXmlTagToUserPrompt(userPrompt, promptXmlTag));
         log.info("\n### [CHAT END {}] #############################################################################", depth);
         if (isFinalAnswerPresent(answer)) {
             return convertToFinalAnswer(answer);
@@ -46,9 +48,10 @@ public class ReActAgent {
         }
     }
 
-    public void streamChat(long userId, String userPrompt, SseEmitter emitter) {
+    @Override
+    public String streamChat(long userId, String userPrompt, SseEmitter emitter) {
         // 清空之前的推理步骤记录
-        sseService.getSentReasoningSteps().get().clear();
+//        sseService.getSentReasoningSteps().get().clear();
         try {
             String finalAnswer = streamChatInternal(userId, userPrompt, 1, "task", emitter);
 
@@ -58,7 +61,8 @@ public class ReActAgent {
 
             // 发送完成事件
             sseService.sendEvent(emitter, "done", Map.of("final_content", finalAnswer));
-            emitter.complete();
+
+            return finalAnswer;
         } catch (Exception e) {
             log.error("Error in stream chat", e);
             try {
@@ -67,6 +71,7 @@ public class ReActAgent {
             } catch (IOException ioException) {
                 log.error("Error sending error event", ioException);
             }
+            return "Error: " + e.getMessage();
         } finally {
             // 清理ThreadLocal
             sseService.getSentReasoningSteps().remove();
@@ -82,7 +87,7 @@ public class ReActAgent {
 
         log.info("\n### [STREAM CHAT BEGIN {}] #########################################################################", depth);
 
-        String answer = chatService.streamChat(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, addXmlTagToUserPrompt(userPrompt, promptXmlTag), emitter);
+        String answer = chatService.streamChat(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, XmlTagExtractor.addXmlTagToUserPrompt(userPrompt, promptXmlTag), emitter);
 
         log.info("\n### [STREAM CHAT END {}] ###########################################################################", depth);
 
@@ -104,10 +109,6 @@ public class ReActAgent {
     }
 
     private boolean isFinalAnswerPresent(String answer) {
-        return answer.contains("<final_answer>");
-    }
-
-    private String addXmlTagToUserPrompt(String userPrompt, String promptXmlTag) {
-        return promptXmlTag != null ? ("<" + promptXmlTag + ">" + userPrompt + "</" + promptXmlTag + ">") : userPrompt;
+        return XmlTagExtractor.containsTag(answer, "final_answer");
     }
 }

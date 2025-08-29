@@ -1,7 +1,7 @@
 package com.enable.ai.web.controller;
 
+import com.enable.ai.agents.PlanAndExecuteAgent;
 import com.enable.ai.agents.ReActAgent;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -22,7 +22,7 @@ public class ChatController {
     private ReActAgent reActAgent;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private PlanAndExecuteAgent planAndExecuteAgent;
 
     @GetMapping(value = "/chat/session", produces = MediaType.APPLICATION_JSON_VALUE)
     public String chatSession(
@@ -64,7 +64,8 @@ public class ChatController {
         // 异步处理聊天请求
         new Thread(() -> {
             try {
-                reActAgent.streamChat(userId, prompt, emitter);
+//                reActAgent.streamChat(userId, prompt, emitter);
+                planAndExecuteAgent.streamChat(userId, prompt, emitter);
             } catch (Exception e) {
                 log.error("Error in async chat processing", e);
                 try {
@@ -72,6 +73,8 @@ public class ChatController {
                 } catch (Exception completeError) {
                     log.error("Error completing emitter with error", completeError);
                 }
+            } finally {
+                emitter.complete();
             }
         }).start();
 
