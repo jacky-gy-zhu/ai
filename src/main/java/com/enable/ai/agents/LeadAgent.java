@@ -19,8 +19,7 @@ public class LeadAgent {
     private SseService sseService;
 
     public String chat(long userId, LeadAgentResponse response) {
-        StringBuilder userPrompt = buildUserPrompt(response);
-        return chatService.chat(userId, PromptConstants.SYSTEM_PROMPT_LEAD_MODE, userPrompt.toString());
+        return chatService.chat(userId, PromptConstants.SYSTEM_PROMPT_LEAD_MODE, buildUserPrompt(response).toString());
     }
 
     private static StringBuilder buildUserPrompt(LeadAgentResponse response) {

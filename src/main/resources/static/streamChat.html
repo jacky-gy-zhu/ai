@@ -312,6 +312,11 @@
             background-color: #e6fffa;
         }
 
+        .reasoning-step.result {
+            border-left: 4px solid #805ad5;  /* 紫色边框 */
+            background-color: #f7faff;        /* 浅紫色背景 */
+        }
+
         .reasoning-step.final_answer {
             border-left: 4px solid #9f7aea;
             background-color: #faf5ff;
@@ -331,6 +336,7 @@
         .step-type.thought { color: #48bb78; }
         .step-type.action { color: #ed8936; }
         .step-type.observation { color: #38b2ac; }
+        .step-type.result { color: #805ad5; }
         .step-type.plan { color: #4299e1; }
         .step-type.final_answer { color: #9f7aea; }
 
@@ -1118,6 +1124,7 @@
                 plan: '📝',      // 新增plan图标
                 action: '⚡',
                 observation: '👀',
+                result: '✨',
                 final_answer: '✅',
                 unknown: '❓'
             };
@@ -1128,8 +1135,9 @@
                 plan: 'PLAN',    // 新增plan名称
                 action: 'ACTION',
                 observation: 'OBSERVATION',
+                result: 'RESULT',
                 final_answer: 'FINAL_ANSWER',
-                unknown: 'UNKNOWN_STEP'
+                unknown: 'NEXT_STEP'
             };
 
 

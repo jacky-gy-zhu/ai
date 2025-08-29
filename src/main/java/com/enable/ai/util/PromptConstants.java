@@ -16,23 +16,23 @@ public class PromptConstants {
             #示例
             
             例子1:
-            <task>告诉我埃菲尔铁塔有多高？</task> \s
-            <thought>我需要找到埃菲尔铁塔的高度。可以使用搜索工具。</thought> \s
-            <action>get_height("埃菲尔铁塔")</action> \s
-            <observation>埃菲尔铁塔的高度约为330米（包含天线）。</observation> \s
-            <thought>搜索结果显示了高度。我已经得到答案了。</thought> \s
-            <final_answer>埃菲尔铁塔的高度约为330米。</final_answer> \s
+            <task>告诉我埃菲尔铁塔有多高？</task>
+            <thought>我需要找到埃菲尔铁塔的高度。可以使用搜索工具。</thought>
+            <action>get_height("埃菲尔铁塔")</action>
+            <observation>埃菲尔铁塔的高度约为330米（包含天线）。</observation>
+            <thought>搜索结果显示了高度。我已经得到答案了。</thought>
+            <final_answer>埃菲尔铁塔的高度约为330米。</final_answer>
             
             例子2:
-            <task>帮我找一个简单的番茄炒蛋食谱，并看看家里的冰箱里有没有西红柿。</task> \s
-            <thought>这个任务分两步。第一步，找到番茄炒蛋的食谱。第二步，检查冰箱里是否有西红柿。我先用 find_recipe 工具。</thought> \s
-            <action>find_recipe(dish="番茄炒蛋")</action> \s
-            <observation>简单的番茄炒蛋食谱：将2个鸡蛋打散，2个番茄切块。热油，先炒鸡蛋，盛出。再热油，炒番茄至软烂，加盐调味，最后加入鸡蛋翻炒。</observation> \s
-            <thought>好的，我已经有食谱了。食谱需要西红柿。现在我需要用 check_fridge 工具看看冰箱里有没有西红柿。</thought> \s
-            <action>check_fridge(item="西红柿")</action> \s
-            <observation>冰箱检查结果：有3个西红柿。</observation> \s
-            <thought>我找到了食谱，并确认了冰箱里有西红柿。可以回答问题了。</thought> \s
-            <final_answer>简单的番茄炒蛋食谱是：鸡蛋打散，番茄切块。先炒鸡蛋，再炒番茄，混合后加盐调味。冰箱里有3个西红柿。</final_answer> \s
+            <task>帮我找一个简单的番茄炒蛋食谱，并看看家里的冰箱里有没有西红柿。</task>
+            <thought>这个任务分两步。第一步，找到番茄炒蛋的食谱。第二步，检查冰箱里是否有西红柿。我先用 find_recipe 工具。</thought>
+            <action>find_recipe(dish="番茄炒蛋")</action>
+            <observation>简单的番茄炒蛋食谱：将2个鸡蛋打散，2个番茄切块。热油，先炒鸡蛋，盛出。再热油，炒番茄至软烂，加盐调味，最后加入鸡蛋翻炒。</observation>
+            <thought>好的，我已经有食谱了。食谱需要西红柿。现在我需要用 check_fridge 工具看看冰箱里有没有西红柿。</thought>
+            <action>check_fridge(item="西红柿")</action>
+            <observation>冰箱检查结果：有3个西红柿。</observation>
+            <thought>我找到了食谱，并确认了冰箱里有西红柿。可以回答问题了。</thought>
+            <final_answer>简单的番茄炒蛋食谱是：鸡蛋打散，番茄切块。先炒鸡蛋，再炒番茄，混合后加盐调味。冰箱里有3个西红柿。</final_answer>
             
             #注意事項
             
@@ -60,35 +60,37 @@ public class PromptConstants {
             
             例子1:
             
-            <task>今年澳网男子冠军的家乡是哪里？</task> \s
-            <plan>1.查询当前日期。2.查询对应日期的澳洲男子冠军名字。3.查询这位澳网冠军的家乡。</plan> \s
-            <next_step>查询当前日期</next_step> \s
+            <task>今年澳网男子冠军的家乡是哪里？</task>
+            <plan>1.查询当前日期。2.查询对应日期的澳洲男子冠军名字。3.查询这位澳网冠军的家乡。</plan>
+            <next_step>查询当前日期</next_step>
             
             例子2:
             
-            <task>今年澳网男子冠军的家乡是哪里？</task> \s
-            <execution_log>Q：查询当前日期。A：2025年8月29日</execution_log> \s
-            <plan>1.查询2025年的澳洲男子冠军名字。2.查询这位澳网冠军的家乡。</plan> \s
-            <next_step>查询2025年8月29日的澳洲男子冠军名字</next_step> \s
+            <task>今年澳网男子冠军的家乡是哪里？</task>
+            <execution_log>Q：查询当前日期。A：2025年8月29日</execution_log>
+            <plan>1.查询2025年的澳洲男子冠军名字。2.查询这位澳网冠军的家乡。</plan>
+            <next_step>查询2025年8月29日的澳洲男子冠军名字</next_step>
             
             例子3:
             
-            <task>今年澳网男子冠军的家乡是哪里？</task> \s
-            <execution_log>Q：查询当前日期。A：2025年8月29日。Q：查询2025年的澳洲男子冠军名字。A：Jannik Sinner</execution_log> \s
-            <plan>1.查询Jannik Sinner的家乡。</plan> \s
-            <next_step>查询Jannik Sinner的家乡</next_step> \s
+            <task>今年澳网男子冠军的家乡是哪里？</task>
+            <execution_log>Q：查询当前日期。A：2025年8月29日。Q：查询2025年的澳洲男子冠军名字。A：Jannik Sinner</execution_log>
+            <plan>1.查询Jannik Sinner的家乡。</plan>
+            <next_step>查询Jannik Sinner的家乡</next_step>
             
             例子4:
             
-            <task>今年澳网男子冠军的家乡是哪里？</task> \s
-            <execution_log>Q：查询当前日期。A：2025年8月29日。Q：查询2025年的澳洲男子冠军名字。A：Jannik Sinner。Q：查询Jannik Sinner的家乡。A：意大利圣坎迪多</execution_log> \s
-            <final_answer>今年澳网男子冠军的家乡是意大利圣坎迪多</final_answer> \s
+            <task>今年澳网男子冠军的家乡是哪里？</task>
+            <execution_log>Q：查询当前日期。A：2025年8月29日。Q：查询2025年的澳洲男子冠军名字。A：Jannik Sinner。Q：查询Jannik Sinner的家乡。A：意大利圣坎迪多</execution_log>
+            <final_answer>今年澳网男子冠军的家乡是意大利圣坎迪多</final_answer>
             
             #注意事項
             
-            <task> 标签由用户提供，请不要擅自生成。但如果用户提问带上了 <task> 标签，请保留它。
+            注意：如果用户的问题足够简单到不需要拆分任务，那么就直接把用户的问题放在 <next_step> 中返回。只有当用户问题够复杂不得不拆分任务的时候才制定计划。但计划步骤尽量精简，控制在1～5步之内，步骤要具体可执行，一旦执行成功了就需要再确认了，带着已执行的结果重新制定计划，直到可以直接给出最终答案为止。
+            记住，用户的提问是包含XML标签的，你要做的就是更新 <plan> 标签和 <next_step> 或 <final_answer> 标签，保留其他标签不变。
             你每次回答都必须包括三个标签，第一个是 <task>，第二个是 <next_step> 或 <final_answer>。
             所有XML标签记得要闭合。
+            你制定计划的时候不需要自己调用任何工具，你只制定计划，但是你不可以执行计划任务。
             你回复的语言要和用户提问所用的语言一致，即用户说中文你就用中文回答，用户说英文你就用英文回答。
             """;
 

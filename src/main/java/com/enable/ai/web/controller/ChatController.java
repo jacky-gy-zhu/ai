@@ -2,6 +2,9 @@ package com.enable.ai.web.controller;
 
 import com.enable.ai.agents.PlanAndExecuteAgent;
 import com.enable.ai.agents.ReActAgent;
+import com.enable.ai.service.PromptRagService;
+import com.enable.ai.service.SseService;
+import com.enable.ai.util.Constants;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -22,7 +25,13 @@ public class ChatController {
     private ReActAgent reActAgent;
 
     @Autowired
+    private SseService sseService;
+
+    @Autowired
     private PlanAndExecuteAgent planAndExecuteAgent;
+
+    @Autowired
+    private PromptRagService promptRagService;
 
     @GetMapping(value = "/chat/session", produces = MediaType.APPLICATION_JSON_VALUE)
     public String chatSession(
@@ -64,8 +73,8 @@ public class ChatController {
         // 异步处理聊天请求
         new Thread(() -> {
             try {
-//                reActAgent.streamChat(userId, prompt, emitter);
-                planAndExecuteAgent.streamChat(userId, prompt, emitter);
+                String finalAnswer = planAndExecuteAgent.streamChat(userId, prompt, emitter);
+                promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Question: " + prompt + "\nAnswer: " + finalAnswer);
             } catch (Exception e) {
                 log.error("Error in async chat processing", e);
                 try {
@@ -75,6 +84,7 @@ public class ChatController {
                 }
             } finally {
                 emitter.complete();
+                sseService.getSentReasoningSteps().remove();
             }
         }).start();
 

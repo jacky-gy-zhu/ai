@@ -1,9 +1,9 @@
 package com.enable.ai.agents;
 
+import com.enable.ai.agents.vo.ReActAgentResponse;
 import com.enable.ai.service.ChatService;
 import com.enable.ai.service.PromptRagService;
 import com.enable.ai.service.SseService;
-import com.enable.ai.util.Constants;
 import com.enable.ai.util.PromptConstants;
 import com.enable.ai.util.XmlTagExtractor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -29,9 +28,7 @@ public class ReActAgent implements AiAgent {
 
     @Override
     public String chat(long userId, String userPrompt) {
-        String finalAnswer = chatInternal(userId, userPrompt, 1, "task");
-        promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Question: " + userPrompt + "\nAnswer: " + finalAnswer);
-        return finalAnswer;
+        return chatInternal(userId, userPrompt, 1, "task");
     }
 
     private String chatInternal(long userId, String userPrompt, int depth, String promptXmlTag) {
@@ -55,32 +52,21 @@ public class ReActAgent implements AiAgent {
         try {
             String finalAnswer = streamChatInternal(userId, userPrompt, 1, "task", emitter);
 
-            // 保存到RAG
-            promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId,
-                    "Question: " + userPrompt + "\nAnswer: " + finalAnswer);
-
             // 发送完成事件
-            sseService.sendEvent(emitter, "done", Map.of("final_content", finalAnswer));
+            sseService.sendResultEvent(emitter, finalAnswer);
 
             return finalAnswer;
         } catch (Exception e) {
             log.error("Error in stream chat", e);
-            try {
-                sseService.sendEvent(emitter, "error", Map.of("message", "处理聊天时出错: " + e.getMessage()));
-            } catch (IOException ioException) {
-                log.error("Error sending error event", ioException);
-            }
+            sseService.sendMessageEvent(emitter, "处理聊天时出错: " + e.getMessage());
             return "Error: " + e.getMessage();
-        } finally {
-            // 清理ThreadLocal
-            sseService.getSentReasoningSteps().remove();
         }
     }
 
     private String streamChatInternal(long userId, String userPrompt,
                                       int depth, String promptXmlTag, SseEmitter emitter) throws IOException {
         if (depth > 20) {
-            sseService.sendEvent(emitter, "error", Map.of("message", "超过最大推理深度"));
+            sseService.sendMessageEvent(emitter, "超过最大推理深度");
             return "Error: Exceeded maximum reasoning depth.";
         }
 
@@ -89,6 +75,9 @@ public class ReActAgent implements AiAgent {
         String answer = chatService.streamChat(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, XmlTagExtractor.addXmlTagToUserPrompt(userPrompt, promptXmlTag), emitter);
 
         log.info("\n### [STREAM CHAT END {}] ###########################################################################", depth);
+
+        ReActAgentResponse response = new ReActAgentResponse(answer);
+        sseService.sendEvent(emitter, response);
 
         if (isFinalAnswerPresent(answer)) {
             return convertToFinalAnswer(answer);

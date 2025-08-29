@@ -4,12 +4,10 @@ import com.enable.ai.agents.vo.LeadAgentResponse;
 import com.enable.ai.service.PromptRagService;
 import com.enable.ai.service.SseService;
 import lombok.extern.slf4j.Slf4j;
+import org.codehaus.plexus.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
-import java.io.IOException;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -35,7 +33,7 @@ public class PlanAndExecuteAgent implements AiAgent {
             response = new LeadAgentResponse(leadAgent.chat(userId, response));
             String nextStep = response.getNextStep();
             String subAnswer = reActAgent.chat(userId, nextStep);
-            response.setExecutionLog(response.getExecutionLog() + "\nQ: " + nextStep + "\nA: " + subAnswer);
+            response.setExecutionLog(response.getExecutionLog() + "\nQuestion: " + nextStep + "\nAnswer: " + subAnswer);
         } while (!response.hasFinalAnswer());
 
         return response.getFinalAnswer();
@@ -45,34 +43,31 @@ public class PlanAndExecuteAgent implements AiAgent {
     public String streamChat(long userId, String userPrompt, SseEmitter emitter) {
         int stepCount = 1;
         try {
-            LeadAgentResponse response = new LeadAgentResponse();
-            response.setTask(userPrompt);
+            LeadAgentResponse response = null;
             do {
+                if (response == null) {
+                    response = new LeadAgentResponse();
+                    response.setTask(userPrompt);
+                }
+                log.info(">>> LeadAgentResponse before chat: {}", response);
                 response = new LeadAgentResponse(leadAgent.chat(userId, response));
-                String nextStep = response.getNextStep();
-                sseService.sendEvent(emitter, "reasoning_step", Map.of(
-                        "type", "plan",
-                        "content", response.getPlan(),
-                        "step_number", stepCount++
-                ));
-                String subAnswer = reActAgent.streamChat(userId, nextStep, emitter);
-                response.setExecutionLog(response.getExecutionLog() + "\nQ: " + nextStep + "\nA: " + subAnswer);
+                log.info(">>> LeadAgentResponse after chat: {}", response);
+                if (!response.hasFinalAnswer()) {
+                    sseService.sendPlanEvent(emitter, response);
+                    String nextStep = response.getNextStep();
+                    sseService.sendNextStepEvent(emitter, response);
+                    String subAnswer = reActAgent.streamChat(userId, nextStep, emitter);
+                    response.setExecutionLog(StringUtils.defaultString(response.getExecutionLog()) + "\nQuestion: " + nextStep + "\nAnswer: " + subAnswer);
+                }
             } while (!response.hasFinalAnswer());
 
-            sseService.sendEvent(emitter, "done", Map.of("final_content", response.getFinalAnswer()));
+            sseService.sendFinalAnswerEvent(emitter, response);
 
             return response.getFinalAnswer();
         } catch (Exception e) {
             log.error("Error in stream chat", e);
-            try {
-                sseService.sendEvent(emitter, "error", Map.of("message", "处理聊天时出错: " + e.getMessage()));
-            } catch (IOException ioException) {
-                log.error("Error sending error event", ioException);
-            }
+            sseService.sendMessageEvent(emitter, "处理聊天时出错: " + e.getMessage());
             return "Error: " + e.getMessage();
-        } finally {
-            // 清理ThreadLocal
-            sseService.getSentReasoningSteps().remove();
         }
     }
 }

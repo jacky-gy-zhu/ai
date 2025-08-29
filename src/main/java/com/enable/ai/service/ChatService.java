@@ -38,6 +38,10 @@ public class ChatService {
     private SseService sseService;
 
     public String chat(Long userId, String systemPrompt, String userPrompt) {
+        return chat(userId, systemPrompt, userPrompt, true);
+    }
+
+    public String chat(Long userId, String systemPrompt, String userPrompt, boolean includesTools) {
         List<Message> currentMessages = Lists.newArrayList();
 
         currentMessages.add(SystemMessage.builder().text(systemPrompt).build());
@@ -54,7 +58,7 @@ public class ChatService {
                 }
             }
         }
-        userPromptBuilder.append("\n").append("Now, please help to complete the following task or conversation:");
+        userPromptBuilder.append("\n").append("### User Prompt:");
         userPromptBuilder.append("\n").append(userPrompt);
         currentMessages.add(UserMessage.builder().text(userPromptBuilder.toString()).build());
 
@@ -62,17 +66,26 @@ public class ChatService {
         log.info("\n>>> User prompt: \n{}", userPromptBuilder);
 
         Prompt promptObj = new Prompt(currentMessages);
-        ToolCallback[] toolCallbacks = mcpService.findRelatedToolCallbacks(userPrompt, 5);
+        ChatClient.CallResponseSpec aiResponse;
 
-        log.info("\n>>> [{} tools] registered.", toolCallbacks.length);
-        for (ToolCallback callback : toolCallbacks) {
-            log.info("\n>>> Tool: {}", callback.getToolDefinition());
+        if (includesTools) {
+
+            ToolCallback[] toolCallbacks = mcpService.findRelatedToolCallbacks(userPrompt, 5);
+
+            log.info("\n>>> [{} tools] registered.", toolCallbacks.length);
+            for (ToolCallback callback : toolCallbacks) {
+                log.info("\n>>> Tool: {}", callback.getToolDefinition());
+            }
+
+            aiResponse = chatClient
+                    .prompt(promptObj)
+                    .toolCallbacks(toolCallbacks)
+                    .call();
+        } else {
+            aiResponse = chatClient
+                    .prompt(promptObj)
+                    .call();
         }
-
-        ChatClient.CallResponseSpec aiResponse = chatClient
-                .prompt(promptObj)
-                .toolCallbacks(toolCallbacks)
-                .call();
 
         String response = aiResponse.content();
 
@@ -82,6 +95,10 @@ public class ChatService {
     }
 
     public String streamChat(long userId, String systemPrompt, String userPrompt, SseEmitter emitter) throws IOException {
+        return streamChat(userId, systemPrompt, userPrompt, emitter, true);
+    }
+
+    public String streamChat(long userId, String systemPrompt, String userPrompt, SseEmitter emitter, boolean includesTools) throws IOException {
         List<Message> currentMessages = Lists.newArrayList();
 
         currentMessages.add(SystemMessage.builder().text(systemPrompt).build());
@@ -99,7 +116,7 @@ public class ChatService {
                 }
             }
         }
-        userPromptBuilder.append("\n").append("Now, please help to complete the following task or conversation:");
+        userPromptBuilder.append("\n").append("### User Prompt:");
         userPromptBuilder.append("\n").append(userPrompt);
         currentMessages.add(UserMessage.builder().text(userPromptBuilder.toString()).build());
 
@@ -107,52 +124,44 @@ public class ChatService {
         log.info("\n>>> User prompt: \n{}", userPromptBuilder);
 
         Prompt promptObj = new Prompt(currentMessages);
-        ToolCallback[] toolCallbacks = mcpService.findRelatedToolCallbacks(userPrompt, 5);
+        ChatClient.ChatClientRequestSpec chatClientRequestSpec = chatClient.prompt(promptObj);
 
-        log.info("\n>>> [{} tools] registered.", toolCallbacks.length);
+        if (includesTools) {
 
-        // 发送可用工具列表事件
-        if (toolCallbacks.length > 0) {
-            Map<String, String> tools = new HashMap<>();
-            for (ToolCallback callback : toolCallbacks) {
-                log.info("\n>>> Tool: {}", callback.getToolDefinition());
-                tools.put(callback.getToolDefinition().name(),
-                        callback.getToolDefinition().description());
+            ToolCallback[] toolCallbacks = mcpService.findRelatedToolCallbacks(userPrompt, 5);
+
+            log.info("\n>>> [{} tools] registered.", toolCallbacks.length);
+
+            // 发送可用工具列表事件
+            if (toolCallbacks.length > 0) {
+                Map<String, String> tools = new HashMap<>();
+                for (ToolCallback callback : toolCallbacks) {
+                    log.info("\n>>> Tool: {}", callback.getToolDefinition());
+                    tools.put(callback.getToolDefinition().name(),
+                            callback.getToolDefinition().description());
+                }
+                sseService.sendToolsEvent(emitter, tools);
             }
-            sseService.sendEvent(emitter, "available_tools", Map.of("tools", tools));
+
+            chatClientRequestSpec.toolCallbacks(toolCallbacks);
         }
+
 
         // 使用流式响应
         StringBuilder responseBuilder = new StringBuilder();
 
-        chatClient
-                .prompt(promptObj)
-                .toolCallbacks(toolCallbacks)
+        //                        String accumulated = responseBuilder.toString();
+        //                        sseService.sendEvent(emitter, "content", Map.of(
+        //                                "delta", chunk,
+        //                                "accumulated", accumulated
+        //                        ));
+        chatClientRequestSpec
                 .stream()
                 .content()
-                .doOnNext(chunk -> {
-                    try {
-                        responseBuilder.append(chunk);
-                        String accumulated = responseBuilder.toString();
-
-                        // 解析并发送结构化推理步骤
-                        sseService.parseAndSendReasoningSteps(accumulated, emitter);
-
-                        sseService.sendEvent(emitter, "content", Map.of(
-                                "delta", chunk,
-                                "accumulated", accumulated
-                        ));
-                    } catch (IOException e) {
-                        log.error("Error sending content chunk", e);
-                    }
-                })
+                .doOnNext(responseBuilder::append)
                 .doOnError(error -> {
                     log.error("Error in stream", error);
-                    try {
-                        sseService.sendEvent(emitter, "error", Map.of("message", "流式响应错误: " + error.getMessage()));
-                    } catch (IOException e) {
-                        log.error("Error sending error event", e);
-                    }
+                    sseService.sendErrorEvent(emitter, error.getMessage());
                 })
                 .blockLast(); // 等待流完成
 
