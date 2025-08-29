@@ -1,4 +1,4 @@
-package com.enable.ai.agents;
+package com.enable.ai.agent;
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 

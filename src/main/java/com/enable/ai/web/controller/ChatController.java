@@ -1,7 +1,7 @@
 package com.enable.ai.web.controller;
 
-import com.enable.ai.agents.PlanAndExecuteAgent;
-import com.enable.ai.agents.ReActAgent;
+import com.enable.ai.agent.PlanAndExecuteAgent;
+import com.enable.ai.agent.ReActAgent;
 import com.enable.ai.service.PromptRagService;
 import com.enable.ai.service.SseService;
 import com.enable.ai.util.Constants;

@@ -1,6 +1,6 @@
-package com.enable.ai.agents;
+package com.enable.ai.agent;
 
-import com.enable.ai.agents.vo.LeadAgentResponse;
+import com.enable.ai.agent.vo.LeadAgentResponse;
 import com.enable.ai.service.PromptRagService;
 import com.enable.ai.service.SseService;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.enable.ai.agents.vo;
+package com.enable.ai.agent.vo;
 
 import com.enable.ai.util.XmlTagExtractor;
 import lombok.Data;
@@ -8,16 +8,16 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class ReActAgentResponse {
+public class LeadAgentResponse {
 
-    public ReActAgentResponse(String response) {
+    public LeadAgentResponse(String response) {
         extractAndCleanFromResponse(response);
     }
 
     private String task;
-    private String thought;
-    private String action;
-    private String observation;
+    private String executionLog;
+    private String plan;
+    private String nextStep;
     private String finalAnswer;
 
     /**
@@ -27,9 +27,9 @@ public class ReActAgentResponse {
      */
     public void extractFromResponse(String response) {
         this.task = extractTagContent(response, "task");
-        this.thought = extractTagContent(response, "thought");
-        this.action = extractTagContent(response, "action");
-        this.observation = extractTagContent(response, "observation");
+        this.executionLog = extractTagContent(response, "execution_log");
+        this.plan = extractTagContent(response, "plan");
+        this.nextStep = extractTagContent(response, "next_step");
         this.finalAnswer = extractTagContent(response, "final_answer");
     }
 
@@ -50,7 +50,8 @@ public class ReActAgentResponse {
      * @return true 如果所有字段都不为null
      */
     public boolean isComplete() {
-        return task != null && thought != null && action != null && observation != null && finalAnswer != null;
+        return task != null && executionLog != null &&
+                plan != null && nextStep != null && finalAnswer != null;
     }
 
     /**
@@ -62,41 +63,27 @@ public class ReActAgentResponse {
         return finalAnswer != null && !finalAnswer.trim().isEmpty();
     }
 
-    public boolean hasAction() {
-        return action != null && !action.trim().isEmpty();
+    public boolean hasExecuteLog() {
+        return executionLog != null && !executionLog.trim().isEmpty();
     }
 
-    public boolean hasThought() {
-        return thought != null && !thought.trim().isEmpty();
+    public boolean hasPlan() {
+        return plan != null && !plan.trim().isEmpty();
     }
 
-    public boolean hasObservation() {
-        return observation != null && !observation.trim().isEmpty();
-    }
-
-    public boolean hasTask() {
-        return task != null && !task.trim().isEmpty();
+    public boolean hasNextStep() {
+        return nextStep != null && !nextStep.trim().isEmpty();
     }
 
     /**
      * 清理提取的内容（去除多余的空白字符）
      */
     public void cleanupContent() {
-        if (task != null) {
-            task = task.trim();
-        }
-        if (thought != null) {
-            thought = thought.trim();
-        }
-        if (action != null) {
-            action = action.trim();
-        }
-        if (observation != null) {
-            observation = observation.trim();
-        }
-        if (finalAnswer != null) {
-            finalAnswer = finalAnswer.trim();
-        }
+        if (task != null) task = task.trim();
+        if (executionLog != null) executionLog = executionLog.trim();
+        if (plan != null) plan = plan.trim();
+        if (nextStep != null) nextStep = nextStep.trim();
+        if (finalAnswer != null) finalAnswer = finalAnswer.trim();
     }
 
     /**
@@ -122,16 +109,16 @@ public class ReActAgentResponse {
             sb.append("Task: ").append(task).append("\n");
         }
 
-        if (thought != null && !thought.isEmpty()) {
-            sb.append("Thought: ").append(thought).append("\n");
+        if (plan != null && !plan.isEmpty()) {
+            sb.append("\nPlan:\n").append(plan).append("\n");
         }
 
-        if (action != null && !action.isEmpty()) {
-            sb.append("Action: ").append(action).append("\n");
+        if (executionLog != null && !executionLog.isEmpty()) {
+            sb.append("\nExecution Log:\n").append(executionLog).append("\n");
         }
 
-        if (observation != null && !observation.isEmpty()) {
-            sb.append("Observation: ").append(observation).append("\n");
+        if (nextStep != null && !nextStep.isEmpty()) {
+            sb.append("\nNext Step:\n").append(nextStep).append("\n");
         }
 
         if (finalAnswer != null && !finalAnswer.isEmpty()) {
@@ -146,15 +133,22 @@ public class ReActAgentResponse {
      */
     public static void main(String[] args) {
         String responseXml = """
-                <task>告诉我埃菲尔铁塔有多高？</task>
-                <thought>我需要找到埃菲尔铁塔的高度。可以使用搜索工具。</thought>
-                <action>get_height("埃菲尔铁塔")</action>
-                <observation>埃菲尔铁塔的高度约为330米（包含天线）。</observation>
-                <thought>搜索结果显示了高度。我已经得到答案了。</thought>
-                <final_answer>埃菲尔铁塔的高度约为330米。</final_answer>
+                <task>分析用户需求并生成报告</task>
+                <execution_log>
+                    1. 接收到用户请求
+                    2. 开始分析数据
+                    3. 生成初步结果
+                </execution_log>
+                <plan>
+                    - 数据收集
+                    - 数据分析
+                    - 报告生成
+                </plan>
+                <next_step>继续收集更多数据</next_step>
+                <final_answer>分析完成，报告已生成</final_answer>
                 """;
 
-        ReActAgentResponse response = new ReActAgentResponse();
+        LeadAgentResponse response = new LeadAgentResponse();
         response.extractAndCleanFromResponse(responseXml);
 
         System.out.println("提取的内容：");

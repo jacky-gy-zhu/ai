@@ -1,7 +1,7 @@
 package com.enable.ai.service;
 
-import com.enable.ai.agents.vo.LeadAgentResponse;
-import com.enable.ai.agents.vo.ReActAgentResponse;
+import com.enable.ai.agent.vo.LeadAgentResponse;
+import com.enable.ai.agent.vo.ReActAgentResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

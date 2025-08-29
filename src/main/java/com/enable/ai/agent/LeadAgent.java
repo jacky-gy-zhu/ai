@@ -1,6 +1,6 @@
-package com.enable.ai.agents;
+package com.enable.ai.agent;
 
-import com.enable.ai.agents.vo.LeadAgentResponse;
+import com.enable.ai.agent.vo.LeadAgentResponse;
 import com.enable.ai.service.ChatService;
 import com.enable.ai.service.SseService;
 import com.enable.ai.util.PromptConstants;
