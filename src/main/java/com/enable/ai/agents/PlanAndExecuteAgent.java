@@ -51,8 +51,8 @@ public class PlanAndExecuteAgent implements AiAgent {
                 response = new LeadAgentResponse(leadAgent.chat(userId, response));
                 String nextStep = response.getNextStep();
                 sseService.sendEvent(emitter, "reasoning_step", Map.of(
-                        "type", "thought",
-                        "content", "执行计划: \n" + response.getPlan(),
+                        "type", "plan",
+                        "content", response.getPlan(),
                         "step_number", stepCount++
                 ));
                 String subAnswer = reActAgent.streamChat(userId, nextStep, emitter);

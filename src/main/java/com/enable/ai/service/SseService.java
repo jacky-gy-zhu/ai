@@ -48,7 +48,7 @@ public class SseService {
         log.debug("Parsing content for reasoning steps. Content length: {}", content.length());
 
         // 定义各种推理步骤的正则表达式 - 只匹配完整的标签对，避免流式重复
-        String[] stepTypes = {"task", "thought", "action", "observation", "final_answer"};
+        String[] stepTypes = {"task", "thought", "plan", "action", "observation", "final_answer"};
 
         for (String stepType : stepTypes) {
             // 只匹配完整的标签对

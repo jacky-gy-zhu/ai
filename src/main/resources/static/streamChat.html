@@ -297,6 +297,11 @@
             background-color: #f0fff4;
         }
 
+        .reasoning-step.plan {
+            border-left: 4px solid #4299e1;  /* 蓝色边框 */
+            background-color: #ebf8ff;        /* 浅蓝色背景 */
+        }
+
         .reasoning-step.action {
             border-left: 4px solid #ed8936;
             background-color: #fffaf0;
@@ -326,6 +331,7 @@
         .step-type.thought { color: #48bb78; }
         .step-type.action { color: #ed8936; }
         .step-type.observation { color: #38b2ac; }
+        .step-type.plan { color: #4299e1; }
         .step-type.final_answer { color: #9f7aea; }
 
         .step-type-icon {
@@ -1109,6 +1115,7 @@
             const typeIcons = {
                 task: '📋',
                 thought: '💭',
+                plan: '📝',      // 新增plan图标
                 action: '⚡',
                 observation: '👀',
                 final_answer: '✅',
@@ -1118,11 +1125,13 @@
             const typeNames = {
                 task: 'TASK',
                 thought: 'THOUGHT',
+                plan: 'PLAN',    // 新增plan名称
                 action: 'ACTION',
                 observation: 'OBSERVATION',
                 final_answer: 'FINAL_ANSWER',
                 unknown: 'UNKNOWN_STEP'
             };
+
 
             // 使用英文大写的步骤类型名称
             const displayName = typeNames[validStepType] || validStepType.toUpperCase();
