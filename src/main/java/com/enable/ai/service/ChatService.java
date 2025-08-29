@@ -34,10 +34,12 @@ public class ChatService extends AbstractChatService {
     private PromptHistoryService promptHistoryService;
 
     public String chatWithReactMode(long userId, String userPrompt) {
-        return chatWithReactModeInternal(userId, userPrompt, userPrompt, 1, "task");
+        String finalAnswer = chatWithReactModeInternal(userId, userPrompt, 1, "task");
+        promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Question: " + userPrompt + "\nAnswer: " + finalAnswer);
+        return finalAnswer;
     }
 
-    private String chatWithReactModeInternal(long userId, String originalUserPrompt, String userPrompt, int depth, String promptXmlTag) {
+    private String chatWithReactModeInternal(long userId, String userPrompt, int depth, String promptXmlTag) {
         if (depth > 20) {
             return "Error: Exceeded maximum reasoning depth.";
         }
@@ -45,11 +47,9 @@ public class ChatService extends AbstractChatService {
         String answer = chatWithUserHistory(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, addXmlTagToUserPrompt(userPrompt, promptXmlTag));
         log.info("\n### [CHAT END {}] #############################################################################", depth);
         if (isFinalAnswerPresent(answer)) {
-            String finalAnswer = convertToFinalAnswer(answer);
-            promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, "Question: " + originalUserPrompt + "\nAnswer: " + finalAnswer);
-            return finalAnswer;
+            return convertToFinalAnswer(answer);
         } else {
-            return chatWithReactModeInternal(userId, originalUserPrompt, answer, depth + 1, null);
+            return chatWithReactModeInternal(userId, answer, depth + 1, null);
         }
     }
 

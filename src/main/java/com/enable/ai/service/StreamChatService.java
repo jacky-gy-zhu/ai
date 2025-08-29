@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
-import org.apache.commons.math3.analysis.function.Abs;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -19,11 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,11 +49,11 @@ public class StreamChatService extends AbstractChatService {
         sentReasoningSteps.get().clear();
         try {
             String finalAnswer = chatWithReactModeInternalStream(userId, userPrompt, userPrompt, 1, "task", emitter);
-            
+
             // 保存到RAG
-            promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId, 
+            promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId,
                     "Question: " + userPrompt + "\nAnswer: " + finalAnswer);
-            
+
             // 发送完成事件
             sendEvent(emitter, "done", Map.of("final_content", finalAnswer));
             emitter.complete();
@@ -76,8 +71,8 @@ public class StreamChatService extends AbstractChatService {
         }
     }
 
-    private String chatWithReactModeInternalStream(long userId, String originalUserPrompt, String userPrompt, 
-                                                 int depth, String promptXmlTag, SseEmitter emitter) throws IOException {
+    private String chatWithReactModeInternalStream(long userId, String userPrompt,
+                                                   int depth, String promptXmlTag, SseEmitter emitter) throws IOException {
         if (depth > 20) {
             sendEvent(emitter, "error", Map.of("message", "超过最大推理深度"));
             return "Error: Exceeded maximum reasoning depth.";
@@ -88,11 +83,11 @@ public class StreamChatService extends AbstractChatService {
         String answer = chatWithUserHistoryStream(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, addXmlTagToUserPrompt(userPrompt, promptXmlTag), emitter);
 
         log.info("\n### [STREAM CHAT END {}] ###########################################################################", depth);
-        
+
         if (isFinalAnswerPresent(answer)) {
             return convertToFinalAnswer(answer);
         } else {
-            return chatWithReactModeInternalStream(userId, originalUserPrompt, answer, depth + 1, null, emitter);
+            return chatWithReactModeInternalStream(userId, answer, depth + 1, null, emitter);
         }
     }
 
@@ -125,21 +120,21 @@ public class StreamChatService extends AbstractChatService {
         ToolCallback[] toolCallbacks = mcpService.findRelatedToolCallbacks(userPrompt, 5);
 
         log.info("\n>>> [{} tools] registered.", toolCallbacks.length);
-        
+
         // 发送可用工具列表事件
         if (toolCallbacks.length > 0) {
             Map<String, String> tools = new HashMap<>();
             for (ToolCallback callback : toolCallbacks) {
                 log.info("\n>>> Tool: {}", callback.getToolDefinition());
-                tools.put(callback.getToolDefinition().name(), 
-                          callback.getToolDefinition().description());
+                tools.put(callback.getToolDefinition().name(),
+                        callback.getToolDefinition().description());
             }
             sendEvent(emitter, "available_tools", Map.of("tools", tools));
         }
 
         // 使用流式响应
         StringBuilder responseBuilder = new StringBuilder();
-        
+
         chatClient
                 .prompt(promptObj)
                 .toolCallbacks(toolCallbacks)
@@ -149,10 +144,10 @@ public class StreamChatService extends AbstractChatService {
                     try {
                         responseBuilder.append(chunk);
                         String accumulated = responseBuilder.toString();
-                        
+
                         // 解析并发送结构化推理步骤
                         parseAndSendReasoningSteps(accumulated, emitter);
-                        
+
                         sendEvent(emitter, "content", Map.of(
                                 "delta", chunk,
                                 "accumulated", accumulated
@@ -181,7 +176,7 @@ public class StreamChatService extends AbstractChatService {
         Map<String, Object> event = new HashMap<>(data);
         event.put("type", eventType);
         event.put("timestamp", System.currentTimeMillis());
-        
+
         String jsonData = objectMapper.writeValueAsString(event);
         emitter.send(SseEmitter.event()
                 .name(eventType)
@@ -204,22 +199,22 @@ public class StreamChatService extends AbstractChatService {
 
     private void parseAndSendReasoningSteps(String content, SseEmitter emitter) throws IOException {
         Set<String> sent = sentReasoningSteps.get();
-        
+
         log.debug("Parsing content for reasoning steps. Content length: {}", content.length());
-        
+
         // 定义各种推理步骤的正则表达式 - 只匹配完整的标签对，避免流式重复
         String[] stepTypes = {"task", "thought", "action", "observation", "final_answer"};
-        
+
         for (String stepType : stepTypes) {
             // 只匹配完整的标签对
             Pattern completePattern = Pattern.compile("<" + stepType + ">(.*?)</" + stepType + ">", Pattern.DOTALL);
             Matcher completeMatcher = completePattern.matcher(content);
             int stepCount = 0;
-            
+
             while (completeMatcher.find()) {
                 stepCount++;
                 String stepKey = stepType + "_" + stepCount;
-                
+
                 if (!sent.contains(stepKey)) {
                     String stepContent = completeMatcher.group(1).trim();
                     if (!stepContent.isEmpty()) {
