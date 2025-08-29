@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.math3.analysis.function.Abs;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Service
-public class StreamChatService {
+public class StreamChatService extends AbstractChatService {
 
     @Autowired
     private ChatClient chatClient;
@@ -61,7 +62,6 @@ public class StreamChatService {
             // 发送完成事件
             sendEvent(emitter, "done", Map.of("final_content", finalAnswer));
             emitter.complete();
-            
         } catch (Exception e) {
             log.error("Error in stream chat", e);
             try {
@@ -84,15 +84,13 @@ public class StreamChatService {
         }
 
         log.info("\n### [STREAM CHAT BEGIN {}] #########################################################################", depth);
-        
-        String answer = chatWithUserHistoryStream(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, 
-                addXmlTagToUserPrompt(userPrompt, promptXmlTag), emitter);
-        
+
+        String answer = chatWithUserHistoryStream(userId, PromptConstants.SYSTEM_PROMPT_REACT_MODE, addXmlTagToUserPrompt(userPrompt, promptXmlTag), emitter);
+
         log.info("\n### [STREAM CHAT END {}] ###########################################################################", depth);
         
         if (isFinalAnswerPresent(answer)) {
-            String finalAnswer = convertToFinalAnswer(answer);
-            return finalAnswer;
+            return convertToFinalAnswer(answer);
         } else {
             return chatWithReactModeInternalStream(userId, originalUserPrompt, answer, depth + 1, null, emitter);
         }
@@ -192,10 +190,6 @@ public class StreamChatService {
 
     private static String addXmlTagToUserPrompt(String userPrompt, String promptXmlTag) {
         return promptXmlTag != null ? ("<" + promptXmlTag + ">" + userPrompt + "</" + promptXmlTag + ">") : userPrompt;
-    }
-
-    private boolean isFinalAnswerPresent(String answer) {
-        return answer.contains("<final_answer>");
     }
 
     private String convertToFinalAnswer(String answer) {

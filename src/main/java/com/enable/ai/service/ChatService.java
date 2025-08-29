@@ -19,7 +19,7 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class ChatService {
+public class ChatService extends AbstractChatService {
 
     @Autowired
     private ChatClient chatClient;
@@ -55,10 +55,6 @@ public class ChatService {
 
     private static String addXmlTagToUserPrompt(String userPrompt, String promptXmlTag) {
         return promptXmlTag != null ? ("<" + promptXmlTag + ">" + userPrompt + "</" + promptXmlTag + ">") : userPrompt;
-    }
-
-    private boolean isFinalAnswerPresent(String answer) {
-        return answer.contains("<final_answer>");
     }
 
     private String convertToFinalAnswer(String answer) {
