@@ -48,7 +48,7 @@ public class StreamChatService extends AbstractChatService {
         // 清空之前的推理步骤记录
         sentReasoningSteps.get().clear();
         try {
-            String finalAnswer = chatWithReactModeInternalStream(userId, userPrompt, userPrompt, 1, "task", emitter);
+            String finalAnswer = chatWithReactModeInternalStream(userId, userPrompt, 1, "task", emitter);
 
             // 保存到RAG
             promptRagService.addUserPromptToCollection(Constants.USER_PROMPTS_COLLECTION_NAME, userId,
